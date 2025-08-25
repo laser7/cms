@@ -165,7 +165,7 @@ export default function PermissionsPage() {
                     <h3 className="text-lg leading-6 font-medium text-gray-900">角色</h3>
                     <button
                       onClick={() => setShowNewRoleModal(true)}
-                      className="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-md text-sm font-medium"
+                      className="bg-[#220646] hover:bg-[#8C7E9C] text-white px-3 py-1 rounded-md text-sm font-medium"
                     >
                       + 新建
                     </button>

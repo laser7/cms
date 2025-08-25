@@ -6,6 +6,8 @@ import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 
+
+
 interface CMSLayoutProps {
   children: React.ReactNode;
 }
@@ -13,7 +15,15 @@ interface CMSLayoutProps {
 const navigation = [
   { name: '数据大屏', href: '/', icon: '📊' },
   { name: '用户', href: '/users', icon: '👤' },
-  { name: '内容管理', href: '/posts', icon: '📝' },
+  { 
+    name: '内容管理', 
+    href: '/posts', 
+    icon: '📝',
+    subItems: [
+      { name: '易经文章', href: '/posts/iching', icon: '📖' },
+      { name: '音频管理', href: '/posts/audio', icon: '🎵' }
+    ]
+  },
   { name: 'AI', href: '/ai', icon: '🤖' },
   { name: '媒体管理', href: '/media', icon: '🖼️' },
   { name: '权限管理', href: '/permissions', icon: '🔐' },
@@ -23,6 +33,7 @@ const navigation = [
 
 export default function CMSLayout({ children }: CMSLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['内容管理']));
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
@@ -51,24 +62,84 @@ export default function CMSLayout({ children }: CMSLayoutProps) {
               </button>
             </div>
                         <nav className="flex-1 space-y-1 px-2 py-4">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  pathname === item.href
-                    ? 'text-white'
-                    : 'text-white hover:bg-purple-700 hover:text-white'
-                }`}
-                onClick={() => setSidebarOpen(false)}
-                style={{
-                  backgroundColor: pathname === item.href ? '#8C7E9C' : 'transparent'
-                }}
-                >
-                  <span className="mr-3 text-lg">{item.icon}</span>
-                  {item.name}
-                </Link>
-              ))}
+                          {navigation.map((item) => (
+              <div key={item.name}>
+                {item.subItems ? (
+                  <div
+                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                      pathname === item.href || item.subItems.some(sub => pathname === sub.href)
+                        ? 'text-white'
+                        : 'text-white hover:bg-purple-700 hover:text-white'
+                    }`}
+                    onClick={() => {
+                      setExpandedItems(prev => {
+                        const newSet = new Set(prev);
+                        if (newSet.has(item.name)) {
+                          newSet.delete(item.name);
+                        } else {
+                          newSet.add(item.name);
+                        }
+                        return newSet;
+                      });
+                    }}
+                    style={{
+                      backgroundColor: pathname === item.href || item.subItems.some(sub => pathname === sub.href) ? 'rgba(140, 126, 156, 0.3)' : 'transparent',
+                      borderRadius: pathname === item.href || item.subItems.some(sub => pathname === sub.href) ? '8px 8px 8px 0px' : '8px'
+                    }}
+                  >
+                    <span className="mr-3 text-lg">{item.icon}</span>
+                    <span className="flex-1">{item.name}</span>
+                    <span className={`transition-transform ${expandedItems.has(item.name) ? 'rotate-90' : ''}`}>
+                      ▼
+                    </span>
+                  </div>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      pathname === item.href
+                        ? 'text-white'
+                        : 'text-white hover:bg-purple-700 hover:text-white'
+                    }`}
+                    onClick={() => setSidebarOpen(false)}
+                    style={{
+                      backgroundColor: pathname === item.href ? 'rgba(140, 126, 156, 0.3)' : 'transparent',
+                      borderRadius: pathname === item.href ? '8px' : '8px'
+                    }}
+                  >
+                    <span className="mr-3 text-lg">{item.icon}</span>
+                    <span className="flex-1">{item.name}</span>
+                  </Link>
+                )}
+                
+                {item.subItems && expandedItems.has(item.name) && (
+                  <div className="ml-6 space-y-1">
+                    {item.subItems.map((subItem, index) => (
+                      <Link
+                        key={subItem.href}
+                        href={subItem.href}
+                        className={`group flex items-center px-3 py-2 text-sm font-medium transition-colors ${
+                          pathname === subItem.href
+                            ? 'text-white'
+                            : 'text-white hover:bg-purple-700 hover:text-white'
+                        }`}
+                        onClick={() => setSidebarOpen(false)}
+                        style={{
+                          backgroundColor: 'transparent',
+                          border: pathname === subItem.href ? '1px solid rgba(140, 126, 156, 0.5)' : '1px solid transparent',
+                          borderRadius: pathname === subItem.href ? 
+                            (index === item.subItems!.length - 1 ? '0px 8px 8px 8px' : '0px 8px 0px 0px') : 
+                            '8px'
+                        }}
+                      >
+                        <span className="mr-3 text-sm">{subItem.icon}</span>
+                        {subItem.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
             </nav>
             <div className="p-4 border-t border-purple-700">
               <button
@@ -98,21 +169,80 @@ export default function CMSLayout({ children }: CMSLayoutProps) {
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  pathname === item.href
-                    ? 'text-white'
-                    : 'text-white hover:bg-purple-700 hover:text-white'
-                }`}
-                style={{
-                  backgroundColor: pathname === item.href ? '#8C7E9C' : 'transparent'
-                }}
-              >
-                <span className="mr-3 text-lg">{item.icon}</span>
-                {item.name}
-              </Link>
+              <div key={item.name}>
+                {item.subItems ? (
+                  <div
+                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                      pathname === item.href || item.subItems.some(sub => pathname === sub.href)
+                        ? 'text-white'
+                        : 'text-white hover:bg-purple-700 hover:text-white'
+                    }`}
+                    onClick={() => {
+                      setExpandedItems(prev => {
+                        const newSet = new Set(prev);
+                        if (newSet.has(item.name)) {
+                          newSet.delete(item.name);
+                        } else {
+                          newSet.add(item.name);
+                        }
+                        return newSet;
+                      });
+                    }}
+                    style={{
+                      backgroundColor: pathname === item.href || item.subItems.some(sub => pathname === sub.href) ? 'rgba(140, 126, 156, 0.3)' : 'transparent',
+                      borderRadius: pathname === item.href || item.subItems.some(sub => pathname === sub.href) ? '8px 8px 8px 0px' : '8px'
+                    }}
+                  >
+                    <span className="mr-3 text-lg">{item.icon}</span>
+                    <span className="flex-1">{item.name}</span>
+                    <span className={`transition-transform ${expandedItems.has(item.name) ? 'rotate-90' : ''}`}>
+                      ▼
+                    </span>
+                  </div>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      pathname === item.href
+                        ? 'text-white'
+                        : 'text-white hover:bg-purple-700 hover:text-white'
+                    }`}
+                    style={{
+                      backgroundColor: pathname === item.href ? 'rgba(140, 126, 156, 0.3)' : 'transparent',
+                      borderRadius: pathname === item.href ? '8px' : '8px'
+                    }}
+                  >
+                    <span className="mr-3 text-lg">{item.icon}</span>
+                    <span className="flex-1">{item.name}</span>
+                  </Link>
+                )}
+                
+                {item.subItems && expandedItems.has(item.name) && (
+                  <div className="ml-6 space-y-1">
+                    {item.subItems.map((subItem, index) => (
+                      <Link
+                        key={subItem.href}
+                        href={subItem.href}
+                        className={`group flex items-center px-3 py-2 text-sm font-medium transition-colors ${
+                          pathname === subItem.href
+                            ? 'text-white'
+                            : 'text-white hover:bg-purple-700 hover:text-white'
+                        }`}
+                        style={{
+                          backgroundColor: 'transparent',
+                          border: pathname === subItem.href ? '1px solid rgba(140, 126, 156, 0.5)' : '1px solid transparent',
+                          borderRadius: pathname === subItem.href ? 
+                            (index === item.subItems!.length - 1 ? '0px 8px 8px 8px' : '0px 8px 0px 0px') : 
+                            '8px'
+                        }}
+                      >
+                        <span className="mr-3 text-sm">{subItem.icon}</span>
+                        {subItem.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
           <div className="p-4 border-t border-[#8C7E9C]">

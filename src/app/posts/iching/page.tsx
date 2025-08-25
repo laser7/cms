@@ -4,86 +4,95 @@ import React, { useState } from 'react';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
-interface Conversation {
+interface IChingArticle {
   id: string;
-  user: {
-    name: string;
-    id: string;
-    avatar: string;
-  };
-  latestMessage: string;
-  status: '进行中' | '已结束';
-  device: 'Android' | 'IOS';
-  lastMessageTime: string;
+  image: string;
+  title: string;
+  content: string;
+  createdAt: string;
 }
 
-const initialConversations: Conversation[] = [
+const initialArticles: IChingArticle[] = [
   {
-    id: '3avlla',
-    user: { name: 'Alex', id: '0924', avatar: '/api/placeholder/32/32' },
-    latestMessage: "I don't feel like to...",
-    status: '进行中',
-    device: 'Android',
-    lastMessageTime: '2025.08.12, 12:30'
+    id: '03',
+    image: '/api/placeholder/60/60',
+    title: 'placeholder article title',
+    content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    createdAt: '2025.08.12, 12:30'
   },
   {
-    id: '3su2s9',
-    user: { name: 'Asad', id: '0353', avatar: '/api/placeholder/32/32' },
-    latestMessage: "I don't feel like to...",
-    status: '进行中',
-    device: 'Android',
-    lastMessageTime: '2025.08.12, 12:30'
+    id: '23',
+    image: '/api/placeholder/60/60',
+    title: 'placeholder article title',
+    content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    createdAt: '2025.08.12, 12:30'
   },
   {
-    id: '3sp2a1',
-    user: { name: 'Josef', id: '0379', avatar: '/api/placeholder/32/32' },
-    latestMessage: "I don't feel like to...",
-    status: '已结束',
-    device: 'IOS',
-    lastMessageTime: '2025.08.12, 12:30'
+    id: '21',
+    image: '/api/placeholder/60/60',
+    title: 'placeholder article title',
+    content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    createdAt: '2025.08.12, 12:30'
   },
   {
-    id: '3k2l0',
-    user: { name: 'Karen', id: '2003', avatar: '/api/placeholder/32/32' },
-    latestMessage: "I don't feel like to...",
-    status: '已结束',
-    device: 'IOS',
-    lastMessageTime: '2025.08.12, 12:30'
+    id: '34',
+    image: '/api/placeholder/60/60',
+    title: 'placeholder article title',
+    content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    createdAt: '2025.08.12, 12:30'
   },
   {
-    id: '2k2be',
-    user: { name: 'Max', id: '1242', avatar: '/api/placeholder/32/32' },
-    latestMessage: "I don't feel like to...",
-    status: '进行中',
-    device: 'Android',
-    lastMessageTime: '2025.08.12, 12:30'
+    id: '233',
+    image: '/api/placeholder/60/60',
+    title: 'placeholder article title',
+    content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    createdAt: '2025.08.12, 12:30'
   },
   {
-    id: '3sajh9',
-    user: { name: 'John', id: '2342', avatar: '/api/placeholder/32/32' },
-    latestMessage: "I don't feel like to...",
-    status: '已结束',
-    device: 'IOS',
-    lastMessageTime: '2025.08.12, 12:30'
+    id: '12',
+    image: '/api/placeholder/60/60',
+    title: 'placeholder article title',
+    content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    createdAt: '2025.08.12, 12:30'
   },
   {
-    id: '12sjg3',
-    user: { name: 'Paul', id: '2341', avatar: '/api/placeholder/32/32' },
-    latestMessage: "I don't feel like to...",
-    status: '进行中',
-    device: 'Android',
-    lastMessageTime: '2025.08.12, 12:30'
+    id: '09',
+    image: '/api/placeholder/60/60',
+    title: 'placeholder article title',
+    content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    createdAt: '2025.08.12, 12:30'
+  },
+  {
+    id: '08',
+    image: '/api/placeholder/60/60',
+    title: 'placeholder article title',
+    content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    createdAt: '2025.08.12, 12:30'
+  },
+  {
+    id: '05',
+    image: '/api/placeholder/60/60',
+    title: 'placeholder article title',
+    content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    createdAt: '2025.08.12, 12:30'
+  },
+  {
+    id: '01',
+    image: '/api/placeholder/60/60',
+    title: 'placeholder article title',
+    content: 'Lorem ipsum dolor sit amet, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+    createdAt: '2025.08.12, 12:30'
   }
 ];
 
-export default function ConversationsPage() {
-  const [conversations] = useState<Conversation[]>(initialConversations);
+export default function IChingArticlesPage() {
+  const [articles] = useState<IChingArticle[]>(initialArticles);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedRows(new Set(conversations.map(c => c.id)));
+      setSelectedRows(new Set(articles.map(a => a.id)));
     } else {
       setSelectedRows(new Set());
     }
@@ -99,9 +108,9 @@ export default function ConversationsPage() {
     setSelectedRows(newSelected);
   };
 
-  const filteredConversations = conversations.filter(conversation =>
-    conversation.user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    conversation.id.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredArticles = articles.filter(article =>
+    article.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    article.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -110,9 +119,9 @@ export default function ConversationsPage() {
         <div className="space-y-6">
           {/* Page header */}
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">会话列表</h1>
+            <h1 className="text-2xl font-bold text-gray-900">易经文章列表</h1>
             <p className="mt-1 text-sm text-gray-500">
-              管理所有用户会话和对话记录
+              管理易经相关的文章和内容
             </p>
           </div>
 
@@ -124,11 +133,11 @@ export default function ConversationsPage() {
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      checked={selectedRows.size === conversations.length}
+                      checked={selectedRows.size === articles.length}
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
-                    <span className="text-sm font-medium text-gray-700">会话列表</span>
+                    <span className="text-sm font-medium text-gray-700">易经文章列表</span>
                   </div>
                   <button className="text-sm text-gray-600 hover:text-gray-900">
                     选择列
@@ -139,13 +148,6 @@ export default function ConversationsPage() {
                 </div>
                 
                 <div className="flex items-center space-x-4">
-                  <div className="relative">
-                    <input
-                      type="text"
-                      placeholder="TL"
-                      className="w-20 px-3 py-2 border border-gray-300 rounded-md text-sm"
-                    />
-                  </div>
                   <div className="relative">
                     <input
                       type="text"
@@ -169,7 +171,7 @@ export default function ConversationsPage() {
             </div>
           </div>
 
-          {/* Table */}
+          {/* Articles table */}
           <div className="bg-white shadow rounded-lg overflow-hidden">
             <div className="overflow-x-auto">
               <table className="min-w-full divide-y divide-gray-200">
@@ -178,7 +180,7 @@ export default function ConversationsPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <input
                         type="checkbox"
-                        checked={selectedRows.size === conversations.length}
+                        checked={selectedRows.size === articles.length}
                         onChange={(e) => handleSelectAll(e.target.checked)}
                         className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                       />
@@ -187,22 +189,16 @@ export default function ConversationsPage() {
                       ID
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      用户
+                      图片
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      用户ID
+                      标题
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      最新消息
+                      内容
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      状态
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      设备
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      最后消息时间
+                      创建时间
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       操作
@@ -210,56 +206,38 @@ export default function ConversationsPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredConversations.map((conversation) => (
-                    <tr key={conversation.id} className="hover:bg-gray-50">
+                  {filteredArticles.map((article) => (
+                    <tr key={article.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
-                          checked={selectedRows.has(conversation.id)}
-                          onChange={(e) => handleSelectRow(conversation.id, e.target.checked)}
+                          checked={selectedRows.has(article.id)}
+                          onChange={(e) => handleSelectRow(article.id, e.target.checked)}
                           className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {conversation.id}
+                        {article.id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="h-8 w-8 rounded-full bg-gray-200 flex items-center justify-center">
-                            <span className="text-sm font-medium text-gray-600">
-                              {conversation.user.name.charAt(0)}
-                            </span>
-                          </div>
-                          <div className="ml-3">
-                            <div className="text-sm font-medium text-gray-900">
-                              {conversation.user.name}
-                            </div>
-                          </div>
+                        <div className="h-12 w-12 rounded-md bg-gray-200 flex items-center justify-center">
+                          <span className="text-xs text-gray-500">图片</span>
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {conversation.user.id}
+                        {article.title}
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 max-w-xs truncate">
-                        {conversation.latestMessage}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex px-2 py-1 text-xs font-semibold rounded-full ${
-                          conversation.status === '进行中' 
-                            ? 'bg-green-100 text-green-800' 
-                            : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          {conversation.status}
-                        </span>
+                      <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                        {article.content}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {conversation.device}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {conversation.lastMessageTime}
+                        {article.createdAt}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
+                          <button className="text-gray-400 hover:text-gray-600">
+                            🗑️
+                          </button>
                           <button className="text-gray-400 hover:text-gray-600">
                             👁️
                           </button>
@@ -282,10 +260,10 @@ export default function ConversationsPage() {
                 <button className="text-gray-400 hover:text-gray-600">
                   ←
                 </button>
-                <button className="px-3 py-1 text-sm font-medium text-white bg-pink-500 rounded">
+                <button className="px-3 py-1 text-sm font-medium text-gray-700 hover:text-gray-900">
                   1
                 </button>
-                <button className="px-3 py-1 text-sm font-medium text-gray-700 hover:text-gray-900">
+                <button className="px-3 py-1 text-sm font-medium text-white bg-pink-500 rounded">
                   2
                 </button>
                 <button className="px-3 py-1 text-sm font-medium text-gray-700 hover:text-gray-900">
