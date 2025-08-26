@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState } from 'react';
-import { FiX, FiMoreVertical, FiCheck } from 'react-icons/fi';
+import React from 'react';
+import { FiX, FiMoreVertical } from 'react-icons/fi';
 
 interface Conversation {
   id: string;
@@ -64,7 +64,6 @@ const messages = [
 ];
 
 export default function ConversationModal({ conversation, isOpen, onClose, mode }: ConversationModalProps) {
-  const [selectedMessage, setSelectedMessage] = useState<number | null>(null);
 
   if (!isOpen) return null;
 

@@ -2,7 +2,7 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
-import { loginUser, logoutUser, logoutUserWithoutAuth, LoginResponse } from '@/lib/auth-api';
+import { loginUser, logoutUser, LoginResponse } from '@/lib/auth-api';
 import { setAuthData, clearAuthData, getStoredUser } from '@/lib/auth';
 
 interface User {
@@ -116,12 +116,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.log('Logout successful');
       } else {
         console.log('Logout API failed:', response.error);
-        // If still getting CORS errors, try fallback
-        if (response.error?.includes('CORS error')) {
-          console.log('CORS error detected, trying fallback logout...');
-          const fallbackResponse = await logoutUserWithoutAuth();
-          console.log('Fallback logout response:', fallbackResponse);
-        }
       }
     } catch (error) {
       console.error('Logout API error:', error);

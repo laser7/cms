@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiTrash2, FiEye, FiEdit3 } from 'react-icons/fi';
+import { FiEye, FiEdit3 } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -246,9 +246,6 @@ export default function IChingArticlesPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          <button className="text-gray-400 hover:text-gray-600 p-1">
-                            <FiTrash2 size={16} />
-                          </button>
                           <button 
                             onClick={() => handleViewArticle(article.id)}
                             className="text-gray-400 hover:text-gray-600 p-1"

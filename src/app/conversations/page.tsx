@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { FiTrash2, FiEye, FiEdit3, FiPlus, FiSearch, FiFilter } from 'react-icons/fi';
+import { FiEye, FiEdit3, FiPlus, FiSearch, FiFilter } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import ConversationModal from '@/components/ConversationModal';
@@ -123,15 +123,7 @@ export default function ConversationsPage() {
     }
   };
 
-  const handleSelectRow = (id: string, checked: boolean) => {
-    const newSelected = new Set(selectedRows);
-    if (checked) {
-      newSelected.add(id);
-    } else {
-      newSelected.delete(id);
-    }
-    setSelectedRows(newSelected);
-  };
+
 
   const getStatusColor = (status: string) => {
     switch (status) {
