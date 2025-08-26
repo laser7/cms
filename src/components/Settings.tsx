@@ -32,10 +32,10 @@ export default function Settings({ settings, onUpdateSettings }: SettingsProps) 
   };
 
   return (
-    <div className="space-y-6">
-      {/* Page header */}
-      <div>
-        <h1 className="text-2xl font-bold text-gray-900">设置</h1>
+    <div className="space-y-4">
+    {/* Page header */}
+    <div className="flex flex-row gap-3">
+        <h1 className="text-xl font-bold text-gray-900">设置</h1>
         <p className="mt-1 text-sm text-gray-500">
           管理您的网站设置和偏好
         </p>

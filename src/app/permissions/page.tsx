@@ -147,10 +147,10 @@ export default function PermissionsPage() {
   return (
     <ProtectedRoute>
       <CMSLayout>
-        <div className="space-y-6">
+      <div className="space-y-4">
           {/* Page header */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">权限管理</h1>
+          <div className="flex flex-row gap-3">
+            <h1 className="text-xl font-bold text-gray-900">权限管理</h1>
             <p className="mt-1 text-sm text-gray-500">
               管理用户角色、权限和访问控制
             </p>

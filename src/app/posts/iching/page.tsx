@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { FiTrash2, FiEye, FiEdit3 } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -86,6 +88,7 @@ const initialArticles: IChingArticle[] = [
 ];
 
 export default function IChingArticlesPage() {
+  const router = useRouter();
   const [articles] = useState<IChingArticle[]>(initialArticles);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
@@ -113,13 +116,21 @@ export default function IChingArticlesPage() {
     article.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleViewArticle = (id: string) => {
+    router.push(`/posts/iching/${id}?mode=view`);
+  };
+
+  const handleEditArticle = (id: string) => {
+    router.push(`/posts/iching/${id}?mode=edit`);
+  };
+
   return (
     <ProtectedRoute>
       <CMSLayout>
-        <div className="space-y-6">
+      <div className="space-y-4">
           {/* Page header */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">易经文章列表</h1>
+          <div className="flex flex-row gap-3">
+            <h1 className="text-xl font-bold text-gray-900">易经文章列表</h1>
             <p className="mt-1 text-sm text-gray-500">
               管理易经相关的文章和内容
             </p>
@@ -137,7 +148,7 @@ export default function IChingArticlesPage() {
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
-                    <span className="text-sm font-medium text-gray-700">易经文章列表</span>
+              
                   </div>
                   <button className="text-sm text-gray-600 hover:text-gray-900">
                     选择列
@@ -235,14 +246,20 @@ export default function IChingArticlesPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          <button className="text-gray-400 hover:text-gray-600">
-                            🗑️
+                          <button className="text-gray-400 hover:text-gray-600 p-1">
+                            <FiTrash2 size={16} />
                           </button>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            👁️
+                          <button 
+                            onClick={() => handleViewArticle(article.id)}
+                            className="text-gray-400 hover:text-gray-600 p-1"
+                          >
+                            <FiEye size={16} />
                           </button>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            ✏️
+                          <button 
+                            onClick={() => handleEditArticle(article.id)}
+                            className="text-gray-400 hover:text-gray-600 p-1"
+                          >
+                            <FiEdit3 size={16} />
                           </button>
                         </div>
                       </td>

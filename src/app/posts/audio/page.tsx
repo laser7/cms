@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { FiPlay, FiTrash2, FiEye, FiEdit3 } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
@@ -90,6 +92,7 @@ const initialAudioFiles: AudioFile[] = [
 ];
 
 export default function AudioManagementPage() {
+  const router = useRouter();
   const [audioFiles] = useState<AudioFile[]>(initialAudioFiles);
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
@@ -143,13 +146,21 @@ export default function AudioManagementPage() {
     audio.id.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleViewAudio = (id: string) => {
+    router.push(`/posts/audio/${id}?mode=view`);
+  };
+
+  const handleEditAudio = (id: string) => {
+    router.push(`/posts/audio/${id}?mode=edit`);
+  };
+
   return (
     <ProtectedRoute>
       <CMSLayout>
-        <div className="space-y-6">
+      <div className="space-y-4">
           {/* Page header */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">音频管理</h1>
+          <div className="flex flex-row gap-3">
+            <h1 className="text-xl font-bold text-gray-900">音频管理</h1>
             <p className="mt-1 text-sm text-gray-500">
               管理易经相关的音频文件和内容
             </p>
@@ -167,7 +178,7 @@ export default function AudioManagementPage() {
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
-                    <span className="text-sm font-medium text-gray-700">音频文件列表</span>
+                 
                   </div>
                   <button className="text-sm text-gray-600 hover:text-gray-900">
                     选择列
@@ -277,17 +288,23 @@ export default function AudioManagementPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          <button className="text-gray-400 hover:text-gray-600">
-                            ▶️
+                          <button className="text-gray-400 hover:text-gray-600 p-1">
+                            <FiPlay size={16} />
                           </button>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            🗑️
+                          <button className="text-gray-400 hover:text-gray-600 p-1">
+                            <FiTrash2 size={16} />
                           </button>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            👁️
+                          <button 
+                            onClick={() => handleViewAudio(audio.id)}
+                            className="text-gray-400 hover:text-gray-600 p-1"
+                          >
+                            <FiEye size={16} />
                           </button>
-                          <button className="text-gray-400 hover:text-gray-600">
-                            ✏️
+                          <button 
+                            onClick={() => handleEditAudio(audio.id)}
+                            className="text-gray-400 hover:text-gray-600 p-1"
+                          >
+                            <FiEdit3 size={16} />
                           </button>
                         </div>
                       </td>

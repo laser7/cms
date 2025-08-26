@@ -2,19 +2,24 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
+import { loginUser, logoutUser, logoutUserWithoutAuth, LoginResponse } from '@/lib/auth-api';
+import { setAuthData, clearAuthData, getStoredUser } from '@/lib/auth';
 
 interface User {
-  email: string;
+  id: number;
+  username: string;
   name: string;
-  role: 'admin' | 'editor' | 'author';
+  role: string;
+  status: number;
 }
 
 interface AuthContextType {
   user: User | null;
   isAuthenticated: boolean;
-  login: (email: string, password: string) => Promise<boolean>;
+  login: (username: string, password: string) => Promise<{ success: boolean; error?: string }>;
   logout: () => void;
   loading: boolean;
+  logoutLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,22 +28,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [logoutLoading, setLogoutLoading] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     // Check if user is authenticated on app load
-    const checkAuth = () => {
+    const checkAuth = async () => {
       try {
         const authStatus = localStorage.getItem('isAuthenticated');
-        const userData = localStorage.getItem('user');
+        const userData = getStoredUser();
+        const token = localStorage.getItem('authToken');
         
-        if (authStatus === 'true' && userData) {
-          const user = JSON.parse(userData);
-          setUser(user);
+        if (authStatus === 'true' && userData && token) {
+          // We have stored auth data, restore the session
+          console.log('Restoring auth session from localStorage');
+          setUser(userData);
           setIsAuthenticated(true);
         }
       } catch (error) {
         console.error('Error checking authentication:', error);
+        // Clear auth data on error
+        clearAuthData();
       } finally {
         setLoading(false);
       }
@@ -47,37 +57,83 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     checkAuth();
   }, []);
 
-  const login = async (email: string, password: string): Promise<boolean> => {
-    // Static credentials for demo
-    const STATIC_CREDENTIALS = {
-      email: 'admin@cms.com',
-      password: 'admin123'
-    };
-
-    if (email === STATIC_CREDENTIALS.email && password === STATIC_CREDENTIALS.password) {
-      const userData: User = {
-        email: email,
-        name: 'Admin User',
-        role: 'admin'
-      };
-
-      localStorage.setItem('isAuthenticated', 'true');
-      localStorage.setItem('user', JSON.stringify(userData));
+  const login = async (username: string, password: string): Promise<{ success: boolean; error?: string }> => {
+    try {
+      const response = await loginUser(username, password);
       
-      setUser(userData);
-      setIsAuthenticated(true);
-      return true;
-    }
+      if (response.success && response.data) {
+        const loginData = response.data as LoginResponse;
+        
+        // Check if login was successful (code === 0)
+        if (loginData.code === 0 && loginData.data) {
+          // Create user object from API response
+          const userData: User = {
+            id: loginData.data.admin.id,
+            username: loginData.data.admin.username,
+            name: loginData.data.admin.username, // Use username as name if no separate name field
+            role: loginData.data.admin.role,
+            status: loginData.data.admin.status
+          };
 
-    return false;
+          // Store authentication data
+          setAuthData(loginData.data.token, userData);
+          
+          setUser(userData);
+          setIsAuthenticated(true);
+          return { success: true };
+        } else {
+          // Login failed - return error message
+          return { 
+            success: false, 
+            error: loginData.msg || '登录失败' 
+          };
+        }
+      } else {
+        return { 
+          success: false, 
+          error: response.error || '网络错误，请稍后重试' 
+        };
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      return { 
+        success: false, 
+        error: '登录失败，请稍后重试' 
+      };
+    }
   };
 
-  const logout = () => {
-    localStorage.removeItem('isAuthenticated');
-    localStorage.removeItem('user');
-    setUser(null);
-    setIsAuthenticated(false);
-    router.push('/login');
+  const logout = async () => {
+    try {
+      setLogoutLoading(true);
+      console.log('Logging out...');
+      
+      // Use proxy in development, which should handle CORS automatically
+      const response = await logoutUser();
+      console.log('Logout API response:', response);
+      
+      if (response.success) {
+        console.log('Logout successful');
+      } else {
+        console.log('Logout API failed:', response.error);
+        // If still getting CORS errors, try fallback
+        if (response.error?.includes('CORS error')) {
+          console.log('CORS error detected, trying fallback logout...');
+          const fallbackResponse = await logoutUserWithoutAuth();
+          console.log('Fallback logout response:', fallbackResponse);
+        }
+      }
+    } catch (error) {
+      console.error('Logout API error:', error);
+    } finally {
+      // Always clear local auth data and redirect, regardless of API response
+      console.log('Clearing local auth data...');
+      clearAuthData();
+      setUser(null);
+      setIsAuthenticated(false);
+      setLogoutLoading(false);
+      router.push('/login');
+    }
   };
 
   const value = {
@@ -85,7 +141,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     isAuthenticated,
     login,
     logout,
-    loading
+    loading,
+    logoutLoading
   };
 
   return (
