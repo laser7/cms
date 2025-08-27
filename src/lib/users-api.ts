@@ -81,3 +81,71 @@ export const getUsersList = async (params: UsersListParams = {}): Promise<ApiRes
     };
   }
 };
+
+// User detail interfaces
+export interface UserActivity {
+  badges: string[];
+  consecutive_visits: number;
+  gold_coins: number;
+  level: number;
+  level_score: number;
+  total_visit_days: number;
+}
+
+export interface UserPermissions {
+  change_avatar: boolean;
+  change_password: boolean;
+  edit_profile: boolean;
+  update_birth_data: boolean;
+  update_contact: boolean;
+  update_profile: boolean;
+  view_personal_info: boolean;
+}
+
+export interface UserDetail {
+  id: number;
+  name: string;
+  contact: string;
+  birth_info: string;
+  created_at: string;
+  status: string;
+  activity: UserActivity;
+  permissions: UserPermissions;
+}
+
+// Get user detail by ID
+export const getUserDetail = async (id: number): Promise<ApiResponse<UserDetail>> => {
+  const endpoint = `/admin/users/${id}`;
+  
+  const response = await apiClient<UserDetail>(endpoint, {
+    method: 'GET',
+  });
+
+  if (response.success && response.data) {
+    // The API response structure is { code: 0, data: UserDetail, error: string, msg: string }
+    const apiResponse = response.data as any;
+    
+    if (apiResponse.code === 0 && apiResponse.data) {
+      return {
+        code: 0,
+        data: apiResponse.data,
+        error: '',
+        msg: 'Success'
+      };
+    } else {
+      return {
+        code: apiResponse.code || 1,
+        data: {} as UserDetail,
+        error: apiResponse.msg || 'Failed to fetch user detail',
+        msg: apiResponse.msg || 'Failed to fetch user detail'
+      };
+    }
+  } else {
+    return {
+      code: 1,
+      data: {} as UserDetail,
+      error: response.error || 'Failed to fetch user detail',
+      msg: response.error || 'Failed to fetch user detail'
+    };
+  }
+};

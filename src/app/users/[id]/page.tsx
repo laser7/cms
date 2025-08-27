@@ -1,156 +1,70 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect, use } from 'react';
+import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { FiChevronLeft, FiEdit3, FiSave, FiX } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { FiX, FiCheck } from 'react-icons/fi';
+import { getUserDetail, UserDetail } from '@/lib/users-api';
 
-interface User {
-  id: string;
-  name: string;
-  status: 'active' | 'inactive';
-  createdAt: string;
-  birthInfo: string;
-  contactInfo: string;
-  activity: {
-    totalVisitDays: number;
-    consecutiveVisits: number;
-    goldCoins: number;
-    level: number;
-    levelScore: number;
-    badges: string[];
-  };
-  permissions: {
-    viewPersonalInfo: boolean;
-    updateContactInfo: boolean;
-    edit: boolean;
-    updateProfile: boolean;
-    updateBirthData: boolean;
-    changePassword: boolean;
-    changeAvatar: boolean;
-  };
-}
-
-// Mock data based on the image
-const mockUser: User = {
-  id: '09',
-  name: 'Johny',
-  status: 'active',
-  createdAt: '2025.08.12, 12:30',
-  birthInfo: '1995.04.23, 15:30, Berlin, Germany',
-  contactInfo: 'placeholder@gmail.com',
-  activity: {
-    totalVisitDays: 87,
-    consecutiveVisits: 57,
-    goldCoins: 316,
-    level: 2,
-    levelScore: 1523,
-    badges: ['14-Day streaks', 'First Meditation', 'Explorer']
-  },
-  permissions: {
-    viewPersonalInfo: true,
-    updateContactInfo: true,
-    edit: false,
-    updateProfile: false,
-    updateBirthData: false,
-    changePassword: false,
-    changeAvatar: false
-  }
-};
-
-export default function UserDetailPage() {
-  const params = useParams();
+export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
+  const resolvedParams = use(params);
   const searchParams = useSearchParams();
-  const router = useRouter();
-  const mode = searchParams.get('mode') || 'view'; // 'view' or 'edit'
-  
-  const [user, setUser] = useState<User>(mockUser);
-  const [formData, setFormData] = useState<User>(mockUser);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  const mode = searchParams.get('mode') || 'view';
+  const [user, setUser] = useState<UserDetail | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(mode === 'edit');
+  const [formData, setFormData] = useState<Partial<UserDetail>>({});
+
+  // Fetch user detail
+  const fetchUserDetail = async () => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await getUserDetail(parseInt(resolvedParams.id));
+      
+      if (response.code === 0) {
+        setUser(response.data);
+        setFormData(response.data);
+      } else {
+        setError(response.msg || 'Failed to fetch user detail');
+      }
+    } catch (err) {
+      setError('Network error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    // Simulate loading user data
-    const loadUser = async () => {
-      setIsLoading(true);
-      // In a real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setUser(mockUser);
-      setFormData(mockUser);
-      setIsLoading(false);
-    };
+    fetchUserDetail();
+  }, [resolvedParams.id]);
 
-    loadUser();
-  }, [params.id]);
+  useEffect(() => {
+    setIsEditing(mode === 'edit');
+  }, [mode]);
 
-  const handleInputChange = (field: keyof User, value: string | number) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const handleActivityChange = (field: keyof User['activity'], value: number) => {
-    setFormData(prev => ({
-      ...prev,
-      activity: {
-        ...prev.activity,
-        [field]: value
-      }
-    }));
-  };
-
-  const handlePermissionChange = (permission: keyof User['permissions'], value: boolean) => {
-    setFormData(prev => ({
-      ...prev,
-      permissions: {
-        ...prev.permissions,
-        [permission]: value
-      }
-    }));
-  };
-
-  const handleRemoveBadge = (badgeIndex: number) => {
-    setFormData(prev => ({
-      ...prev,
-      activity: {
-        ...prev.activity,
-        badges: prev.activity.badges.filter((_, index) => index !== badgeIndex)
-      }
-    }));
-  };
-
-  const handleSave = async () => {
-    setIsSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    
-    // Update the user with new data
-    setUser(formData);
-    setIsSaving(false);
-    
-    // Switch back to view mode
-    router.push(`/users/${params.id}?mode=view`);
-  };
-
-  const handleCancel = () => {
-    // Reset form data to original user
-    setFormData(user);
-    // Switch back to view mode
-    router.push(`/users/${params.id}?mode=view`);
-  };
-
-  const handleEdit = () => {
-    router.push(`/users/${params.id}?mode=edit`);
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
       <ProtectedRoute>
         <CMSLayout>
           <div className="flex items-center justify-center h-64">
-            <div className="text-gray-500">加载中...</div>
+            <div className="text-lg text-gray-600">加载中...</div>
+          </div>
+        </CMSLayout>
+      </ProtectedRoute>
+    );
+  }
+
+  if (error || !user) {
+    return (
+      <ProtectedRoute>
+        <CMSLayout>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-lg text-red-600">{error || '用户不存在'}</div>
           </div>
         </CMSLayout>
       </ProtectedRoute>
@@ -163,292 +77,259 @@ export default function UserDetailPage() {
         <div className="space-y-6">
           {/* Page header */}
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">
-                {mode === 'edit' ? '编辑用户' : '用户详情'}
-              </h1>
-              <p className="mt-1 text-xs text-gray-500">
-                {mode === 'edit' ? '编辑用户信息和权限' : '查看用户详细信息'}
-              </p>
-            </div>
-            {mode === 'view' && (
-              <button
-                onClick={handleEdit}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+            <div className="flex items-center space-x-4">
+              <Link
+                href="/users"
+                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
               >
-                编辑用户
-              </button>
-            )}
+                <FiChevronLeft className="w-4 h-4" />
+                <span className="text-sm">返回列表</span>
+              </Link>
+              <h1 className="text-xl font-bold text-gray-900">
+                用户信息 {isEditing && <span className="text-sm font-normal text-gray-500">(编辑模式)</span>}
+              </h1>
+            </div>
           </div>
 
-          {/* User Details Card */}
+          {/* Basic Information */}
           <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-base leading-6 font-medium text-gray-900 mb-4">
-                用户详情
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    ID
-                  </label>
-                  <input
-                    type="text"
-                    value={user.id}
-                    disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
-                  />
+            <div className="px-6 py-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">基本信息</h3>
+              <div className="space-y-4">
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-sm font-medium text-gray-600">ID:</span>
+                  <span className="text-sm text-gray-900">{user.id}</span>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    姓名
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    disabled={mode === 'view'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
-                    }`}
-                    placeholder="输入用户姓名..."
-                  />
+                
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-sm font-medium text-gray-600">姓名:</span>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={formData.name || ''}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                      className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <span className="text-sm text-gray-900">{user.name}</span>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    状态
-                  </label>
-                  <select
-                    value={formData.status}
-                    onChange={(e) => handleInputChange('status', e.target.value)}
-                    disabled={mode === 'view'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
-                    }`}
-                  >
-                    <option value="active">活跃</option>
-                    <option value="inactive">非活跃</option>
-                  </select>
+                
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-sm font-medium text-gray-600">联系方式:</span>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={formData.contact || ''}
+                      onChange={(e) => setFormData({...formData, contact: e.target.value})}
+                      className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <span className="text-sm text-gray-900">{user.contact}</span>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    创建时间
-                  </label>
-                  <input
-                    type="text"
-                    value={user.createdAt}
-                    disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
-                  />
+                
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-sm font-medium text-gray-600">出生信息:</span>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={formData.birth_info || ''}
+                      onChange={(e) => setFormData({...formData, birth_info: e.target.value})}
+                      className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    />
+                  ) : (
+                    <span className="text-sm text-gray-900">{user.birth_info}</span>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    出生信息
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.birthInfo}
-                    onChange={(e) => handleInputChange('birthInfo', e.target.value)}
-                    disabled={mode === 'view'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
-                    }`}
-                    placeholder="输入出生信息..."
-                  />
+                
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-sm font-medium text-gray-600">状态:</span>
+                  {isEditing ? (
+                    <select
+                      value={formData.status || ''}
+                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                      className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    >
+                      <option value="active">活跃</option>
+                      <option value="inactive">非活跃</option>
+                    </select>
+                  ) : (
+                    <span className={`text-sm px-2 py-1 rounded-full ${
+                      user.status === 'active' 
+                        ? 'bg-green-100 text-green-800' 
+                        : 'bg-red-100 text-red-800'
+                    }`}>
+                      {user.status === 'active' ? '活跃' : '非活跃'}
+                    </span>
+                  )}
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    联系方式
-                  </label>
-                  <input
-                    type="email"
-                    value={formData.contactInfo}
-                    onChange={(e) => handleInputChange('contactInfo', e.target.value)}
-                    disabled={mode === 'view'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
-                    }`}
-                    placeholder="输入联系方式..."
-                  />
+                
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-sm font-medium text-gray-600">创建时间:</span>
+                  <span className="text-sm text-gray-900">{user.created_at}</span>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* User Activity Card */}
+          {/* Activity Information */}
           <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-base leading-6 font-medium text-gray-900 mb-4">
-                用户活动
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    访问总天数
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.activity.totalVisitDays}
-                    onChange={(e) => handleActivityChange('totalVisitDays', parseInt(e.target.value) || 0)}
-                    disabled={mode === 'view'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
-                    }`}
-                  />
+            <div className="px-6 py-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">活动信息</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm font-medium text-gray-600">等级:</span>
+                  <span className="text-sm text-gray-900">{user.activity.level}</span>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    连续访问
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.activity.consecutiveVisits}
-                    onChange={(e) => handleActivityChange('consecutiveVisits', parseInt(e.target.value) || 0)}
-                    disabled={mode === 'view'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
-                    }`}
-                  />
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm font-medium text-gray-600">等级分数:</span>
+                  <span className="text-sm text-gray-900">{user.activity.level_score}</span>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    金币数
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.activity.goldCoins}
-                    onChange={(e) => handleActivityChange('goldCoins', parseInt(e.target.value) || 0)}
-                    disabled={mode === 'view'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
-                    }`}
-                  />
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm font-medium text-gray-600">金币:</span>
+                  <span className="text-sm text-gray-900">{user.activity.gold_coins}</span>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    等级
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.activity.level}
-                    onChange={(e) => handleActivityChange('level', parseInt(e.target.value) || 0)}
-                    disabled={mode === 'view'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
-                    }`}
-                  />
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm font-medium text-gray-600">连续访问:</span>
+                  <span className="text-sm text-gray-900">{user.activity.consecutive_visits} 天</span>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    等级分
-                  </label>
-                  <input
-                    type="number"
-                    value={formData.activity.levelScore}
-                    onChange={(e) => handleActivityChange('levelScore', parseInt(e.target.value) || 0)}
-                    disabled={mode === 'view'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
-                    }`}
-                  />
+                <div className="flex justify-between items-center py-2">
+                  <span className="text-sm font-medium text-gray-600">总访问天数:</span>
+                  <span className="text-sm text-gray-900">{user.activity.total_visit_days} 天</span>
                 </div>
               </div>
               
-                             <div>
-                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                   徽章
-                 </label>
-                 <div className="flex flex-wrap gap-2">
-                   {formData.activity.badges.map((badge, index) => (
-                     <span
-                       key={index}
-                       className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800"
-                     >
-                       {badge}
-                       {mode === 'edit' && (
-                         <button
-                           onClick={() => handleRemoveBadge(index)}
-                           className="ml-2 text-gray-400 hover:text-red-500 text-xs"
-                         >
-                           ×
-                         </button>
-                       )}
-                     </span>
-                   ))}
-                 </div>
-               </div>
-            </div>
-          </div>
-
-          {/* Permissions Card */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-base leading-6 font-medium text-gray-900 mb-4">
-                权限
-              </h3>
-              <div className="space-y-3">
-                {Object.entries(formData.permissions).map(([key, value]) => {
-                  const permissionLabels: { [key: string]: string } = {
-                    viewPersonalInfo: '查看个人信息',
-                    updateContactInfo: '更新联系方式',
-                    edit: '编辑',
-                    updateProfile: '更新档案',
-                    updateBirthData: '更新出生数据',
-                    changePassword: '更改密码',
-                    changeAvatar: '更改头像'
-                  };
-
-                  return (
-                    <div key={key} className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-700">
-                        {permissionLabels[key]}
+              {/* Badges */}
+              <div className="mt-4">
+                <span className="text-sm font-medium text-gray-600">徽章:</span>
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {user.activity.badges.length > 0 ? (
+                    user.activity.badges.map((badge, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                      >
+                        {badge}
                       </span>
-                      <div className="flex items-center space-x-2">
-                        {mode === 'edit' ? (
-                          <label className="relative inline-flex items-center cursor-pointer">
-                            <input
-                              type="checkbox"
-                              checked={value}
-                              onChange={(e) => handlePermissionChange(key as keyof User['permissions'], e.target.checked)}
-                              className="sr-only peer"
-                            />
-                            <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-purple-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-purple-600"></div>
-                          </label>
-                        ) : (
-                          <div className="flex items-center">
-                            {value ? (
-                              <FiCheck className="text-green-500" size={20} />
-                            ) : (
-                              <FiX className="text-red-500" size={20} />
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                    ))
+                  ) : (
+                    <span className="text-sm text-gray-500">暂无徽章</span>
+                  )}
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Action Buttons - Only show in edit mode */}
-          {mode === 'edit' && (
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 border border-pink-300 text-pink-700 bg-white hover:bg-pink-50 rounded-md text-sm font-medium transition-colors"
-              >
-                取消更新
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
-              >
-                {isSaving ? '保存中...' : '更新'}
-              </button>
+          {/* Permissions */}
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">权限信息</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={user.permissions.view_personal_info}
+                    disabled
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">查看个人信息</span>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={user.permissions.edit_profile}
+                    disabled
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">编辑资料</span>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={user.permissions.update_profile}
+                    disabled
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">更新资料</span>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={user.permissions.update_contact}
+                    disabled
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">更新联系方式</span>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={user.permissions.update_birth_data}
+                    disabled
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">更新出生数据</span>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={user.permissions.change_avatar}
+                    disabled
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">更换头像</span>
+                </div>
+                <div className="flex items-center">
+                  <input
+                    type="checkbox"
+                    checked={user.permissions.change_password}
+                    disabled
+                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
+                  />
+                  <span className="ml-2 text-sm text-gray-700">修改密码</span>
+                </div>
+              </div>
             </div>
-          )}
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-3">
+            {isEditing ? (
+              <>
+                <button
+                  onClick={() => {
+                    setIsEditing(false);
+                    setFormData(user); // Reset form data
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md transition-colors flex items-center space-x-2"
+                >
+                  <FiX className="w-4 h-4" />
+                  <span>取消</span>
+                </button>
+                <button
+                  onClick={() => {
+                    // Handle save logic here
+                    alert('保存成功！');
+                    setIsEditing(false);
+                    // In real app, you would call an API to update the user
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors flex items-center space-x-2"
+                >
+                  <FiSave className="w-4 h-4" />
+                  <span>保存</span>
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => setIsEditing(true)}
+                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors flex items-center space-x-2"
+              >
+                <FiEdit3 className="w-4 h-4" />
+                <span>编辑</span>
+              </button>
+            )}
+          </div>
         </div>
       </CMSLayout>
     </ProtectedRoute>
