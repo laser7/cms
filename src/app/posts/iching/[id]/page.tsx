@@ -5,20 +5,24 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Image from 'next/image';
+import { getYijingContentById, deleteYijingContent, YijingContent } from '@/lib/yijing-api';
+import { FiTrash2 } from 'react-icons/fi';
 
 interface IChingArticle {
   id: string;
   title: string;
+  description: string;
   content: string;
   image: string;
   createdAt: string;
   updatedAt: string;
 }
 
-// Mock data - in a real app this would come from an API
+// Mock data - fallback when API fails
 const mockArticle: IChingArticle = {
   id: '09',
   title: 'Placeholder for an example I-Ching article title',
+  description: 'A placeholder description for the article',
   content: `Until recently, the prevailing view assumed lorem ipsum was born as a nonsense text. "It's not Latin, though it looks like it, and it actually says nothing," Before & After magazine answered a curious reader, "Its 'words' do not convey the same meaning as real Latin words do. Lorem ipsum is a dummy text that has been used by typesetters since the 1500s to show what text will look like when it is laid out on a page.
 
 The passage is attributed to an unknown typesetter in the 15th century who is thought to have scrambled parts of Cicero's De Finibus Bonorum et Malorum for use in a type specimen book. It usually begins with:
@@ -41,16 +45,49 @@ export default function IChingArticleDetailPage() {
   const [formData, setFormData] = useState<IChingArticle>(mockArticle);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // Simulate loading article data
     const loadArticle = async () => {
+      if (!params.id) return;
+      
       setIsLoading(true);
-      // In a real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setArticle(mockArticle);
-      setFormData(mockArticle);
-      setIsLoading(false);
+      setError(null);
+      
+      try {
+        const response = await getYijingContentById(Number(params.id));
+        
+        if (response.code === 0 && response.data) {
+          // Map the API response to our local interface
+          const apiData = response.data as YijingContent;
+          
+          const articleData: IChingArticle = {
+            id: apiData.id.toString(),
+            title: apiData.title || `易经文章 ${params.id}`,
+            description: apiData.description || '',
+            content: apiData.content || '',
+            image: apiData.image || '/api/placeholder/200/150',
+            createdAt: apiData.created_at || new Date().toLocaleDateString('zh-CN'),
+            updatedAt: apiData.updated_at || new Date().toLocaleDateString('zh-CN')
+          };
+          
+          setArticle(articleData);
+          setFormData(articleData);
+        } else {
+          setError(response.msg || 'Failed to load article');
+          // Fallback to mock data
+          setArticle(mockArticle);
+          setFormData(mockArticle);
+        }
+      } catch (err) {
+        setError('Network error occurred');
+        // Fallback to mock data
+        setArticle(mockArticle);
+        setFormData(mockArticle);
+      } finally {
+        setIsLoading(false);
+      }
     };
 
     loadArticle();
@@ -87,6 +124,39 @@ export default function IChingArticleDetailPage() {
     router.push(`/posts/iching/${params.id}?mode=edit`);
   };
 
+  const handleDelete = async () => {
+    if (!params.id) return;
+    
+    setIsDeleting(true);
+    setError(null);
+    
+    try {
+      const response = await deleteYijingContent(Number(params.id));
+      
+      if (response.code === 0) {
+        alert('文章删除成功！');
+        // Redirect to the list page after successful deletion
+        router.push('/posts/iching');
+      } else {
+        setError(response.msg || 'Failed to delete article');
+        alert(`删除失败: ${response.msg}`);
+      }
+    } catch (err) {
+      setError('Network error occurred while deleting');
+      alert('删除文章时发生错误');
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  const confirmDelete = () => {
+    if (confirm(`确定要删除文章 "${article.title}" 吗？此操作不可撤销。`)) {
+      handleDelete();
+    }
+  };
+
+
+
   if (isLoading) {
     return (
       <ProtectedRoute>
@@ -122,6 +192,22 @@ export default function IChingArticleDetailPage() {
               </button>
             )}
           </div>
+
+          {/* Error message */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">
+                    加载失败
+                  </h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    {error}
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Article Metadata Card */}
           <div className="bg-white shadow rounded-lg">
@@ -193,6 +279,24 @@ export default function IChingArticleDetailPage() {
                   />
                 </div>
 
+                {/* Description */}
+                <div>
+                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                    描述
+                  </label>
+                  <input
+                    type="text"
+                    id="description"
+                    value={formData.description}
+                    onChange={(e) => handleInputChange('description', e.target.value)}
+                    disabled={mode === 'view'}
+                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
+                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
+                    }`}
+                    placeholder="输入文章描述..."
+                  />
+                </div>
+
                 {/* Image */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -239,22 +343,35 @@ export default function IChingArticleDetailPage() {
 
           {/* Action Buttons - Only show in edit mode */}
           {mode === 'edit' && (
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-between items-center">
               <button
-                onClick={handleCancel}
-                className="px-4 py-2 border border-pink-300 text-pink-700 bg-white hover:bg-pink-50 rounded-md text-sm font-medium transition-colors"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
               >
-                取消更新
+                <FiTrash2 size={16} />
+                <span>{isDeleting ? '删除中...' : '删除文章'}</span>
               </button>
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
-              >
-                {isSaving ? '保存中...' : '更新'}
-              </button>
+              
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCancel}
+                  className="px-4 py-2 border border-pink-300 text-pink-700 bg-white hover:bg-pink-50 rounded-md text-sm font-medium transition-colors"
+                >
+                  取消更新
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
+                >
+                  {isSaving ? '保存中...' : '更新'}
+                </button>
+              </div>
             </div>
           )}
+
+
         </div>
       </CMSLayout>
     </ProtectedRoute>

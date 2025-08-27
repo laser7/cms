@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { FiEye, FiEdit3, FiPlus, FiSearch, FiTrash2 } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { getYijingContents, YijingContent, YijingListParams } from '@/lib/yijing-api';
+import { getYijingContents, deleteYijingContent, YijingContent, YijingListParams } from '@/lib/yijing-api';
 
 // Default query parameters
 const defaultParams: YijingListParams = {
@@ -22,6 +22,7 @@ export default function IChingArticlesPage() {
   const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [queryParams, setQueryParams] = useState<YijingListParams>(defaultParams);
   const [totalContents, setTotalContents] = useState(0);
+  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
 
   // Fetch Yijing contents from API
   const fetchContents = async (params: YijingListParams) => {
@@ -120,6 +121,41 @@ export default function IChingArticlesPage() {
   const handleEditContent = (id: number) => {
     router.push(`/posts/iching/${id}?mode=edit`);
   };
+
+  const handleDeleteContent = async (id: number) => {
+    setDeleteLoading(id);
+    setError(null);
+    
+    try {
+      const response = await deleteYijingContent(id);
+      
+      if (response.code === 0) {
+        // Remove the deleted item from the list
+        setContents(prev => prev.filter(content => content.id !== id));
+        setTotalContents(prev => prev - 1);
+        alert('文章删除成功！');
+      } else {
+        setError(response.msg || 'Failed to delete content');
+        alert(`删除失败: ${response.msg}`);
+      }
+    } catch (err) {
+      setError('Network error occurred while deleting');
+      alert('删除文章时发生错误');
+    } finally {
+      setDeleteLoading(null);
+    }
+  };
+
+  const confirmDelete = (id: number) => {
+    const content = contents.find(c => c.id === id);
+    const title = content?.title || `文章 ${id}`;
+    
+    if (confirm(`确定要删除文章 "${title}" 吗？此操作不可撤销。`)) {
+      handleDeleteContent(id);
+    }
+  };
+
+
 
   return (
     <ProtectedRoute>
@@ -270,7 +306,11 @@ export default function IChingArticlesPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
-                            <button className="text-gray-400 hover:text-red-600 p-1">
+                            <button 
+                              onClick={() => confirmDelete(content.id)}
+                              className="text-gray-400 hover:text-red-600 p-1"
+                              title="删除内容"
+                            >
                               <FiTrash2 size={16} />
                             </button>
                             <button 
@@ -441,6 +481,8 @@ export default function IChingArticlesPage() {
           </div>
         </div>
       </CMSLayout>
+
+
     </ProtectedRoute>
   );
 }
