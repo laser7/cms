@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { FiTrash2, FiEye, FiEdit3, FiPlus, FiSearch, FiFilter } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { getUsersList, User, UsersListParams } from '@/lib/users-api';
+import { getUsersList, deleteUser, User, UsersListParams } from '@/lib/users-api';
 
 // Default query parameters
 const defaultParams: UsersListParams = {
@@ -121,6 +121,24 @@ export default function UsersPage() {
 
   const handleEditUser = (id: number) => {
     router.push(`/users/${id}?mode=edit`);
+  };
+
+  const handleDeleteUser = async (id: number, name: string) => {
+    if (confirm(`确定要删除用户 "${name}" 吗？此操作不可撤销。`)) {
+      try {
+        const response = await deleteUser(id);
+        
+        if (response.code === 0) {
+          alert('用户删除成功！');
+          // Refresh the users list
+          fetchUsers(queryParams);
+        } else {
+          alert(`删除失败: ${response.msg}`);
+        }
+      } catch (err) {
+        alert('删除用户时发生错误');
+      }
+    }
   };
 
   return (
@@ -274,18 +292,24 @@ export default function UsersPage() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          <button className="text-gray-400 hover:text-gray-600 p-1">
+                          <button 
+                            onClick={() => handleDeleteUser(user.id, user.name)}
+                            className="text-gray-400 hover:text-red-600 p-1 transition-colors"
+                            title="删除用户"
+                          >
                             <FiTrash2 size={16} />
                           </button>
                           <button 
                             onClick={() => handleViewUser(user.id)}
                             className="text-gray-400 hover:text-gray-600 p-1"
+                            title="查看用户"
                           >
                             <FiEye size={16} />
                           </button>
                           <button 
                             onClick={() => handleEditUser(user.id)}
                             className="text-gray-400 hover:text-gray-600 p-1"
+                            title="编辑用户"
                           >
                             <FiEdit3 size={16} />
                           </button>

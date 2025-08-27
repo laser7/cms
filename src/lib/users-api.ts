@@ -149,3 +149,40 @@ export const getUserDetail = async (id: number): Promise<ApiResponse<UserDetail>
     };
   }
 };
+
+// Delete user by ID
+export const deleteUser = async (id: number): Promise<ApiResponse<string>> => {
+  const endpoint = `/admin/users/${id}`;
+  
+  const response = await apiClient<string>(endpoint, {
+    method: 'DELETE',
+  });
+
+  if (response.success && response.data) {
+    // The API response structure is { code: 0, data: string, error: string, msg: string }
+    const apiResponse = response.data as any;
+    
+    if (apiResponse.code === 0) {
+      return {
+        code: 0,
+        data: apiResponse.data || 'User deleted successfully',
+        error: '',
+        msg: 'Success'
+      };
+    } else {
+      return {
+        code: apiResponse.code || 1,
+        data: '',
+        error: apiResponse.msg || 'Failed to delete user',
+        msg: apiResponse.msg || 'Failed to delete user'
+      };
+    }
+  } else {
+    return {
+      code: 1,
+      data: '',
+      error: response.error || 'Failed to delete user',
+      msg: response.error || 'Failed to delete user'
+    };
+  }
+};

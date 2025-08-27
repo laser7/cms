@@ -3,10 +3,10 @@
 import React, { useState, useEffect, use } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { FiChevronLeft, FiEdit3, FiSave, FiX } from 'react-icons/fi';
+import { FiChevronLeft, FiEdit3, FiSave, FiX, FiTrash2 } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { getUserDetail, UserDetail } from '@/lib/users-api';
+import { getUserDetail, deleteUser, UserDetail } from '@/lib/users-api';
 
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -46,6 +46,26 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
   useEffect(() => {
     setIsEditing(mode === 'edit');
   }, [mode]);
+
+  const handleDeleteUser = async () => {
+    if (!user) return;
+    
+    if (confirm(`确定要删除用户 "${user.name}" 吗？此操作不可撤销。`)) {
+      try {
+        const response = await deleteUser(user.id);
+        
+        if (response.code === 0) {
+          alert('用户删除成功！');
+          // Redirect to users list
+          window.location.href = '/users';
+        } else {
+          alert(`删除失败: ${response.msg}`);
+        }
+      } catch (err) {
+        alert('删除用户时发生错误');
+      }
+    }
+  };
 
   if (loading) {
     return (
@@ -321,13 +341,22 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                 </button>
               </>
             ) : (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors flex items-center space-x-2"
-              >
-                <FiEdit3 className="w-4 h-4" />
-                <span>编辑</span>
-              </button>
+              <>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors flex items-center space-x-2"
+                >
+                  <FiEdit3 className="w-4 h-4" />
+                  <span>编辑</span>
+                </button>
+                <button
+                  onClick={handleDeleteUser}
+                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors flex items-center space-x-2"
+                >
+                  <FiTrash2 className="w-4 h-4" />
+                  <span>删除</span>
+                </button>
+              </>
             )}
           </div>
         </div>
