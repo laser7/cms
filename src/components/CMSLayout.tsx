@@ -38,16 +38,36 @@ const navigation = [
   },
   { name: 'AI', href: '/ai', icon: <FiCpu /> },
   { name: '媒体管理', href: '/media', icon: <FiImage /> },
-  { name: '权限管理', href: '/permissions', icon: <FiShield /> },
+  { 
+    name: '权限管理', 
+    href: '/permissions', 
+    icon: <FiShield />,
+    subItems: [
+      { name: '菜单管理', href: '/permissions/menus', icon: <FiFileText /> },
+      { name: '角色管理', href: '/permissions/roles', icon: <FiUsers /> }
+    ]
+  },
   { name: '会话管理', href: '/conversations', icon: <FiMessageCircle /> },
   { name: '设置', href: '/settings', icon: <FiSettings /> },
 ];
 
 export default function CMSLayout({ children }: CMSLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [expandedItems, setExpandedItems] = useState<Set<string>>(new Set(['内容管理']));
   const pathname = usePathname();
   const { user, logout, logoutLoading } = useAuth();
+
+  // Initialize expandedItems based on current pathname
+  const getInitialExpandedItems = () => {
+    const expanded = new Set<string>();
+    navigation.forEach(item => {
+      if (item.subItems && (pathname === item.href || item.subItems.some(sub => pathname === sub.href))) {
+        expanded.add(item.name);
+      }
+    });
+    return expanded;
+  };
+
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(getInitialExpandedItems());
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -137,7 +157,9 @@ export default function CMSLayout({ children }: CMSLayoutProps) {
                             ? 'text-white'
                             : 'text-white hover:bg-[#8C7E9C] hover:text-white'
                         }`}
-                        onClick={() => setSidebarOpen(false)}
+                        onClick={() => {
+                          setSidebarOpen(false);
+                        }}
                         style={{
                           backgroundColor: pathname === subItem.href ? 'rgba(140, 126, 156, 0.3)' : 'transparent',
                           border: '1px solid transparent',
@@ -251,6 +273,7 @@ export default function CMSLayout({ children }: CMSLayoutProps) {
                             ? 'text-white'
                             : 'text-white hover:bg-[#8C7E9C] hover:text-white'
                         }`}
+
                         style={{
                           backgroundColor: pathname === subItem.href ? 'rgba(140, 126, 156, 0.3)' : 'transparent',
                           border: '1px solid transparent',
