@@ -30,4 +30,31 @@ export interface SiteSettings {
   description: string;
   logo: string;
   theme: 'light' | 'dark';
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  content: string;
+  type: 'reminder' | 'promotion' | 'update' | 'alert';
+  pushTime: string;
+  pushLocation: string;
+  createdAt: string;
+  updatedAt: string;
+  status: 'active' | 'inactive' | 'draft';
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  criteria: string;
+  triggerCondition: string;
+  category: string;
+  ownerCount: number;
+  createdAt: string;
+  updatedAt: string;
+  status: 'active' | 'inactive';
 } 

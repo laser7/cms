@@ -122,22 +122,28 @@ export default function ConversationModal({ conversation, isOpen, onClose, mode 
           <h3 className="text-lg font-medium text-gray-900 mb-4">会话记录</h3>
           <div className="space-y-4">
             {messages.map((message) => (
-              <div key={message.id} className="flex space-x-3">
-                <div className="flex-shrink-0">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${
-                    message.sender === 'user' ? 'bg-[#8C7E9C]' : 'bg-[#220646]'
-                  }`}>
-                    {message.sender === 'user' ? 'U' : 'A'}
+              <div key={message.id} className={`flex space-x-3 ${
+                message.sender === 'user' ? 'justify-end' : 'justify-start'
+              }`}>
+                {message.sender === 'ai' && (
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium bg-[#220646]">
+                      A
+                    </div>
                   </div>
-                </div>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2 mb-1">
+                )}
+                <div className={`flex-1 max-w-xs ${
+                  message.sender === 'user' ? 'order-first' : ''
+                }`}>
+                  <div className={`flex items-center space-x-2 mb-1 ${
+                    message.sender === 'user' ? 'justify-end' : 'justify-start'
+                  }`}>
                     <span className="text-sm font-medium text-gray-900">
                       {message.sender === 'user' ? conversation.user.name : 'AI助手'}
                     </span>
                     <span className="text-xs text-gray-500">{message.timestamp}</span>
                   </div>
-                  <div className={`rounded-lg p-3 max-w-xs ${
+                  <div className={`rounded-lg p-3 ${
                     message.sender === 'user' 
                       ? 'bg-[#8C7E9C] text-white' 
                       : 'bg-gray-100 text-gray-900'
@@ -145,6 +151,13 @@ export default function ConversationModal({ conversation, isOpen, onClose, mode 
                     <div className="text-sm">{message.content}</div>
                   </div>
                 </div>
+                {message.sender === 'user' && (
+                  <div className="flex-shrink-0">
+                    <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium bg-[#8C7E9C]">
+                      U
+                    </div>
+                  </div>
+                )}
               </div>
             ))}
           </div>

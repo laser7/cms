@@ -48,7 +48,15 @@ const navigation = [
     ]
   },
   { name: '会话管理', href: '/conversations', icon: <FiMessageCircle /> },
-  { name: '设置', href: '/settings', icon: <FiSettings /> },
+  { 
+    name: '设置', 
+    href: '/settings', 
+    icon: <FiSettings />,
+    subItems: [
+      { name: '通知管理', href: '/settings/notifications', icon: <FiMessageCircle /> },
+      { name: '徽章管理', href: '/settings/badges', icon: <FiShield /> }
+    ]
+  },
 ];
 
 export default function CMSLayout({ children }: CMSLayoutProps) {
