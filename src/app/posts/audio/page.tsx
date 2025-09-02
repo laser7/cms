@@ -345,7 +345,7 @@ export default function AudioManagementPage() {
                   {selectedRows.size > 0 && (
                     <button 
                       onClick={handleBulkDelete}
-                      className="text-sm text-red-600 hover:text-red-800 px-3 py-1 border border-red-300 rounded hover:bg-red-50"
+                      className="text-sm text-[#C24C4C] hover:text-[#7A3636] px-3 py-1 border border-[#C24C4C] rounded hover:bg-[#C24C4C] transition-colors"
                     >
                       删除选中 ({selectedRows.size})
                     </button>
@@ -391,7 +391,7 @@ export default function AudioManagementPage() {
                   
                   <button 
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="bg-[#220646] hover:bg-[#8C7E9C] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                    className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
                   >
                     + 上传音频
                   </button>

@@ -206,7 +206,7 @@ export default function AIPage() {
                   </button>
                   <button 
                     onClick={() => setIsCreateModalOpen(true)}
-                    className="bg-[#8C7E9C] hover:bg-[#220646] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
+                    className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
                   >
                     <FiPlus size={16} />
                     <span>新增</span>

@@ -7,6 +7,7 @@ import { FiChevronLeft, FiEdit3, FiSave, FiX, FiTrash2 } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { getUserDetail, deleteUser, UserDetail } from '@/lib/users-api';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const resolvedParams = use(params);
@@ -95,21 +96,16 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
     <ProtectedRoute>
       <CMSLayout>
         <div className="space-y-6">
+          {/* Breadcrumbs */}
+          <Breadcrumbs
+            items={[
+              { label: '用户管理', href: '/users' },
+              { label: user?.name || '用户详情' }
+            ]}
+          />
+
           {/* Page header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/users"
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <FiChevronLeft className="w-4 h-4" />
-                <span className="text-sm">返回列表</span>
-              </Link>
-              <h1 className="text-xl font-bold text-gray-900">
-                用户信息 {isEditing && <span className="text-sm font-normal text-gray-500">(编辑模式)</span>}
-              </h1>
-            </div>
-          </div>
+    
 
           {/* Basic Information */}
           <div className="bg-white shadow rounded-lg">
@@ -334,7 +330,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
                     setIsEditing(false);
                     // In real app, you would call an API to update the user
                   }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors flex items-center space-x-2"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#8C7E9C] hover:bg-[#7A6B8A] rounded-md transition-colors flex items-center space-x-2"
                 >
                   <FiSave className="w-4 h-4" />
                   <span>保存</span>
@@ -344,14 +340,14 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
               <>
                 <button
                   onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors flex items-center space-x-2"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#553C9A] hover:bg-[#4A2F8A] rounded-md transition-colors flex items-center space-x-2"
                 >
                   <FiEdit3 className="w-4 h-4" />
                   <span>编辑</span>
                 </button>
                 <button
                   onClick={handleDeleteUser}
-                  className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md transition-colors flex items-center space-x-2"
+                  className="px-4 py-2 text-sm font-medium text-white bg-[#C24C4C] hover:bg-[#7A3636] rounded-md transition-colors flex items-center space-x-2"
                 >
                   <FiTrash2 className="w-4 h-4" />
                   <span>删除</span>

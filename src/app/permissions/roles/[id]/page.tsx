@@ -241,7 +241,7 @@ export default function RoleDetailPage({ params }: { params: { id: string } }) {
                   <div className="flex items-end">
                     <button 
                       disabled={!isEditing}
-                      className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
+                      className="px-4 py-2 bg-[#8C7E9C] text-white rounded-md hover:bg-[#7A6B8A] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
                     >
                       关联
                     </button>

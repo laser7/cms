@@ -249,7 +249,7 @@ export default function RoleManagementPage() {
 
               <button 
                 onClick={() => setShowNewRoleModal(true)}
-                className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-pink-600 hover:to-purple-700 flex items-center space-x-2"
+                className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium hover:from-pink-600 hover:to-purple-700 flex items-center space-x-2"
               >
                 <FiPlus className="w-4 h-4" />
                 <span>新增</span>

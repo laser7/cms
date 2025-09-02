@@ -220,7 +220,7 @@ export default function BadgesPage() {
                 <button className="p-2 text-gray-400 hover:text-gray-600">
                   <FiFilter className="w-4 h-4" />
                 </button>
-                <button className="bg-[#220646] hover:bg-[#8C7E9C] text-white px-4 py-2 rounded-md text-sm font-medium flex items-center space-x-2">
+                <button className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium flex items-center space-x-2">
                   <FiPlus className="w-4 h-4" />
                   <span>新增</span>
                 </button>

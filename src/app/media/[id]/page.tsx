@@ -209,14 +209,14 @@ export default function MediaDetailPage() {
             <div className="flex justify-end space-x-3">
               <button
                 onClick={handleCancel}
-                className="px-4 py-2 border border-pink-300 text-pink-700 bg-white hover:bg-pink-50 rounded-md text-sm font-medium transition-colors"
+                className="px-4 py-2 borderborder-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md text-sm font-medium transition-colors"
               >
                 取消更新
               </button>
               <button
                 onClick={handleSave}
                 disabled={isSaving}
-                className="px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
+                                  className="px-4 py-2 bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
               >
                 {isSaving ? '保存中...' : '更新'}
               </button>

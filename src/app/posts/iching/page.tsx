@@ -206,7 +206,7 @@ export default function IChingArticlesPage() {
                   <button className="text-sm text-gray-600 hover:text-gray-900">
                     ☰
                   </button>
-                  <button className="bg-[#220646] hover:bg-[#8C7E9C] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                  <button className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
                     + 新增
                   </button>
                 </div>

@@ -154,7 +154,7 @@ export default function MediaPage() {
                   <button className="text-gray-600 hover:text-gray-900">
                     <FiFilter size={20} />
                   </button>
-                  <button className="bg-[#8C7E9C] hover:bg-[#220646] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2">
+                  <button className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2">
                     <FiPlus size={16} />
                     <span>新增</span>
                   </button>

@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Image from 'next/image';
 import { getSoundtrackById, updateSoundtrack, deleteSoundtrack } from '@/lib/audio-api';
 import { Soundtrack } from '@/types';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 export default function AudioDetailPage() {
   const params = useParams();
@@ -169,30 +170,26 @@ export default function AudioDetailPage() {
     <ProtectedRoute>
       <CMSLayout>
         <div className="space-y-6">
+          {/* Breadcrumbs */}
+          <Breadcrumbs
+            items={[
+              { label: '音频管理', href: '/posts/audio' },
+              { label: soundtrack?.title || '音频详情' }
+            ]}
+          />
+
           {/* Page header */}
-          <div className="flex items-center justify-between">
-            <div className="flex flex-row gap-2">
-              <h1 className="text-xl font-bold text-gray-900">
-                {mode === 'edit' ? '编辑音频' : '音频信息'}
-              </h1>
-              <p className="mt-1 text-sm text-gray-500">
-                {mode === 'edit' ? '编辑音频文件信息' : '查看音频文件详情'}
-              </p>
-            </div>
+          <div className="flex items-center justify-end">
+
             {mode === 'view' && (
               <div className="flex space-x-3">
                 <button
                   onClick={handleEdit}
-                  className="bg-[#553C9A] hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  className="bg-[#553C9A] hover:bg-[#4A2F8A] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
                 >
                   编辑音频
                 </button>
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  删除音频
-                </button>
+  
               </div>
             )}
           </div>
@@ -215,33 +212,18 @@ export default function AudioDetailPage() {
               <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
                 音频信息
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
-                <div className="flex flex-row justify-between w-1/3 border-b border-gray-200 pb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    ID
-                  </label>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {soundtrack?.id}
-                  </label>
-                
+              <div className="space-y-4">
+                <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                  <span className="text-sm font-medium text-gray-700">ID</span>
+                  <span className="text-sm text-gray-900 font-mono">{soundtrack?.id}</span>
                 </div>
-                <div className="flex flex-row justify-between w-1/3 border-b border-gray-200 pb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    创建时间
-                  </label>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {soundtrack?.created_at}
-                  </label>
-               
+                <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                  <span className="text-sm font-medium text-gray-700">创建时间</span>
+                  <span className="text-sm text-gray-900">{soundtrack?.created_at}</span>
                 </div>
-                <div className="flex flex-row justify-between w-1/3 border-b border-gray-200 pb-4">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    上次更新
-                  </label>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                  {soundtrack?.updated_at}
-                  </label>
-                
+                <div className="flex items-center justify-between py-3 border-b border-gray-200">
+                  <span className="text-sm font-medium text-gray-700">上次更新</span>
+                  <span className="text-sm text-gray-900">{soundtrack?.updated_at}</span>
                 </div>
               </div>
             </div>
@@ -374,21 +356,21 @@ export default function AudioDetailPage() {
               <button
                 onClick={() => setShowDeleteConfirm(true)}
                 disabled={isDeleting}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-md text-sm font-medium transition-colors"
+                className="px-4 py-2 bg-[#C24C4C] hover:bg-red-700 disabled:bg-red-400 text-white rounded-md text-sm font-medium transition-colors"
               >
                 {isDeleting ? '删除中...' : '删除音频'}
               </button>
               <div className="flex space-x-3">
                 <button
                   onClick={handleCancel}
-                  className="px-4 py-2 border border-pink-300 text-pink-700 bg-white hover:bg-pink-50 rounded-md text-sm font-medium transition-colors"
+                  className="px-4 py-2 border border-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md text-sm font-medium transition-colors"
                 >
                   取消更新
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
                 >
                   {isSaving ? '保存中...' : '更新'}
                 </button>
@@ -418,7 +400,7 @@ export default function AudioDetailPage() {
                 <button
                   onClick={handleDelete}
                   disabled={isDeleting}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-md text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-[#C24C4C] hover:bg-[#7A3636] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
                 >
                   {isDeleting ? '删除中...' : '确认删除'}
                 </button>

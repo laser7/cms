@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import Image from 'next/image';
 import { getYijingContentById, deleteYijingContent, YijingContent } from '@/lib/yijing-api';
 import { FiTrash2 } from 'react-icons/fi';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 interface IChingArticle {
   id: string;
@@ -173,20 +174,21 @@ export default function IChingArticleDetailPage() {
     <ProtectedRoute>
       <CMSLayout>
         <div className="space-y-6">
+          {/* Breadcrumbs */}
+          <Breadcrumbs
+            items={[
+              { label: '易经管理', href: '/posts/iching' },
+              { label: article?.title || '文章详情' }
+            ]}
+          />
+
           {/* Page header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">
-                {mode === 'edit' ? '编辑文章' : '文章详情'}
-              </h1>
-              <p className="mt-1 text-sm text-gray-500">
-                {mode === 'edit' ? '编辑易经文章内容' : '查看易经文章详情'}
-              </p>
-            </div>
+          <div className="flex items-end justify-end">
+            
             {mode === 'view' && (
               <button
                 onClick={handleEdit}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                                  className="bg-[#553C9A] hover:bg-[#4A2F8A] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
               >
                 编辑文章
               </button>
@@ -347,7 +349,7 @@ export default function IChingArticleDetailPage() {
               <button
                 onClick={confirmDelete}
                 disabled={isDeleting}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
+                                  className="px-4 py-2 bg-[#C24C4C] hover:bg-[#7A3636] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
               >
                 <FiTrash2 size={16} />
                 <span>{isDeleting ? '删除中...' : '删除文章'}</span>
@@ -356,14 +358,14 @@ export default function IChingArticleDetailPage() {
               <div className="flex space-x-3">
                 <button
                   onClick={handleCancel}
-                  className="px-4 py-2 border border-pink-300 text-pink-700 bg-white hover:bg-pink-50 rounded-md text-sm font-medium transition-colors"
+                  className="px-4 py-2 border border-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md text-sm font-medium transition-colors"
                 >
                   取消更新
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
                 >
                   {isSaving ? '保存中...' : '更新'}
                 </button>

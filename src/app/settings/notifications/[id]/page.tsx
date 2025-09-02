@@ -202,13 +202,13 @@ export default function NotificationDetailPage() {
             <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
               <button
                 onClick={handleCancel}
-                className="px-4 py-2 border border-pink-300 text-pink-700 bg-white hover:bg-pink-50 rounded-md text-sm font-medium transition-colors"
+                className="px-4 py-2 border border-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md text-sm font-medium transition-colors"
               >
                 取消更新
               </button>
               <button
                 onClick={handleSave}
-                className="px-4 py-2 bg-pink-600 hover:bg-pink-700 text-white rounded-md text-sm font-medium transition-colors"
+                                  className="px-4 py-2 bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white rounded-md text-sm font-medium transition-colors"
               >
                 更新
               </button>

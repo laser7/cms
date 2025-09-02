@@ -195,7 +195,7 @@ export default function UsersPage() {
                     <option value="active">活跃</option>
                     <option value="inactive">非活跃</option>
                   </select>
-                  <button className="bg-[#8C7E9C] hover:bg-[#220646] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2">
+                  <button className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2">
                     <FiPlus size={16} />
                     <span>新增</span>
                   </button>

@@ -124,7 +124,7 @@ export default function MenuManagementPage() {
                 </button>
               </div>
 
-              <button className="bg-gradient-to-r from-pink-500 to-purple-600 text-white px-4 py-2 rounded-md text-sm font-medium hover:from-pink-600 hover:to-purple-700">
+              <button className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium hover:from-pink-600 hover:to-purple-700">
                 新增
               </button>
             </div>

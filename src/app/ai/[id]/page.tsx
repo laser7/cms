@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { getAIById, updateAI, deleteAI, testAI } from '@/lib/ai-api';
 import { AI } from '@/types';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
+import Breadcrumbs from '@/components/Breadcrumbs';
 
 export default function AIFeatureDetailPage() {
   const params = useParams();
@@ -208,16 +209,17 @@ export default function AIFeatureDetailPage() {
     <ProtectedRoute>
       <CMSLayout>
         <div className="space-y-6">
+          {/* Breadcrumbs */}
+          <Breadcrumbs
+            items={[
+              { label: 'AI管理', href: '/ai' },
+              { label: aiFeature?.api || 'AI功能详情' }
+            ]}
+          />
+
           {/* Page header */}
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">
-                {mode === 'edit' ? '编辑AI功能' : 'AI功能详情'}
-              </h1>
-              <p className="mt-1 text-xs text-gray-500">
-                {mode === 'edit' ? '编辑AI功能配置' : '查看AI功能详细信息'}
-              </p>
-            </div>
+          <div className="flex items-center justify-end">
+        
             {mode === 'view' && (
               <button
                 onClick={handleEdit}
@@ -363,7 +365,7 @@ export default function AIFeatureDetailPage() {
                   <button
                     onClick={handleTestAI}
                     disabled={isTesting || !testRequest.trim()}
-                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
+                    className="px-4 py-2 bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
                   >
                     {isTesting ? '测试中...' : '发送测试'}
                   </button>
@@ -408,20 +410,20 @@ export default function AIFeatureDetailPage() {
                 <button
                   onClick={() => setShowDeleteConfirm(true)}
                   disabled={isDeleting}
-                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-md text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-[#C24C4C] hover:bg-[#7A3636] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
                 >
                   {isDeleting ? '删除中...' : '删除'}
                 </button>
                 <button
                   onClick={handleCancel}
-                  className="px-4 py-2 border border-pink-300 text-pink-700 bg-white hover:bg-pink-50 rounded-md text-sm font-medium transition-colors"
+                  className="px-4 py-2 border border-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md text-sm font-medium transition-colors"
                 >
                   取消更新
                 </button>
                 <button
                   onClick={handleSave}
                   disabled={isSaving}
-                  className="px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
+                  className="px-4 py-2 bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
                 >
                   {isSaving ? '保存中...' : '更新'}
                 </button>
