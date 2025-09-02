@@ -84,15 +84,25 @@ export const getSoundtracks = async (
  */
 export const getSoundtrackById = async (id: number): Promise<ApiResponse<Soundtrack>> => {
   try {
-    const response = await apiClient<Soundtrack>(`/admin/soundtracks/${id}`);
+    const response = await apiClient<RawApiResponse<Soundtrack>>(`/admin/soundtracks/${id}`);
     
     if (response.success && response.data) {
-      return {
-        code: 0,
-        data: response.data,
-        error: '',
-        msg: 'Success'
-      };
+      // Check if the actual API response indicates success
+      if (response.data.code === 200 || response.data.code === 0) {
+        return {
+          code: 0,
+          data: response.data.data, // Extract the actual data from the nested structure
+          error: '',
+          msg: response.data.msg || 'Success'
+        };
+      } else {
+        return {
+          code: 1,
+          data: {} as Soundtrack,
+          error: response.data.msg || 'Failed to fetch soundtrack',
+          msg: 'Error'
+        };
+      }
     } else {
       return {
         code: 1,
@@ -121,18 +131,28 @@ export const createSoundtrack = async (
   soundtrackData: Omit<Soundtrack, 'id' | 'created_at'>
 ): Promise<ApiResponse<Soundtrack>> => {
   try {
-    const response = await apiClient<Soundtrack>('/admin/soundtracks', {
+    const response = await apiClient<RawApiResponse<Soundtrack>>('/admin/soundtracks', {
       method: 'POST',
       body: JSON.stringify(soundtrackData)
     });
     
     if (response.success && response.data) {
-      return {
-        code: 0,
-        data: response.data,
-        error: '',
-        msg: 'Success'
-      };
+      // Check if the actual API response indicates success
+      if (response.data.code === 200 || response.data.code === 0) {
+        return {
+          code: 0,
+          data: response.data.data, // Extract the actual data from the nested structure
+          error: '',
+          msg: response.data.msg || 'Success'
+        };
+      } else {
+        return {
+          code: 1,
+          data: {} as Soundtrack,
+          error: response.data.msg || 'Failed to create soundtrack',
+          msg: 'Error'
+        };
+      }
     } else {
       return {
         code: 1,
@@ -163,18 +183,28 @@ export const updateSoundtrack = async (
   soundtrackData: Partial<Omit<Soundtrack, 'id' | 'created_at'>>
 ): Promise<ApiResponse<Soundtrack>> => {
   try {
-    const response = await apiClient<Soundtrack>(`/admin/soundtracks/${id}`, {
+    const response = await apiClient<RawApiResponse<Soundtrack>>(`/admin/soundtracks/${id}`, {
       method: 'PUT',
       body: JSON.stringify(soundtrackData)
     });
     
     if (response.success && response.data) {
-      return {
-        code: 0,
-        data: response.data,
-        error: '',
-        msg: 'Success'
-      };
+      // Check if the actual API response indicates success
+      if (response.data.code === 200 || response.data.code === 0) {
+        return {
+          code: 0,
+          data: response.data.data, // Extract the actual data from the nested structure
+          error: '',
+          msg: response.data.msg || 'Success'
+        };
+      } else {
+        return {
+          code: 1,
+          data: {} as Soundtrack,
+          error: response.data.msg || 'Failed to update soundtrack',
+          msg: 'Error'
+        };
+      }
     } else {
       return {
         code: 1,
@@ -201,17 +231,27 @@ export const updateSoundtrack = async (
  */
 export const deleteSoundtrack = async (id: number): Promise<ApiResponse<string>> => {
   try {
-    const response = await apiClient<string>(`/admin/soundtracks/${id}`, {
+    const response = await apiClient<RawApiResponse<string>>(`/admin/soundtracks/${id}`, {
       method: 'DELETE'
     });
     
-    if (response.success) {
-      return {
-        code: 0,
-        data: 'Soundtrack deleted successfully',
-        error: '',
-        msg: 'Success'
-      };
+    if (response.success && response.data) {
+      // Check if the actual API response indicates success
+      if (response.data.code === 200 || response.data.code === 0) {
+        return {
+          code: 0,
+          data: response.data.data || 'Soundtrack deleted successfully',
+          error: '',
+          msg: response.data.msg || 'Success'
+        };
+      } else {
+        return {
+          code: 1,
+          data: '',
+          error: response.data.msg || 'Failed to delete soundtrack',
+          msg: 'Error'
+        };
+      }
     } else {
       return {
         code: 1,
@@ -229,4 +269,23 @@ export const deleteSoundtrack = async (id: number): Promise<ApiResponse<string>>
       msg: 'Error'
     };
   }
+};
+
+/**
+ * Check if URL is a real audio file that can be played
+ * @param url - URL to check
+ * @returns boolean indicating if URL is a playable audio file
+ */
+export const isRealAudioFile = (url: string): boolean => {
+  const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
+  const hasAudioExtension = audioExtensions.some(ext => url.toLowerCase().includes(ext));
+  
+  // Check for common placeholder/example domains
+  const placeholderDomains = ['example.com', 'placeholder.com', 'test.com', 'dummy.com'];
+  const isPlaceholder = placeholderDomains.some(domain => url.includes(domain));
+  
+  // Check if URL looks like a real file (not just a page)
+  const isLikelyFile = url.includes('/') && !url.includes('?') && !url.includes('#');
+  
+  return hasAudioExtension && !isPlaceholder && isLikelyFile;
 };

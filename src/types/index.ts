@@ -67,6 +67,7 @@ export interface Soundtrack {
   cover: string;
   url: string;
   created_at: string;
+  updated_at: string;
 }
 
 export interface SoundtrackListResponse {

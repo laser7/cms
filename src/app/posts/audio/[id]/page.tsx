@@ -5,29 +5,8 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Image from 'next/image';
-
-interface AudioFile {
-  id: string;
-  title: string;
-  category: string;
-  composer: string;
-  url: string;
-  cover: string;
-  createdAt: string;
-  updatedAt: string;
-}
-
-// Mock data - in a real app this would come from an API
-const mockAudio: AudioFile = {
-  id: '09',
-  title: 'Placeholder for an example soundtrack title',
-  category: 'Focus',
-  composer: 'Alicia Keys',
-  url: 'https://www.haike.sound.cn/suhoiwe9w0e9ru0q3iu',
-  cover: '/api/placeholder/200/150',
-  createdAt: '2025.08.11, 12:00',
-  updatedAt: '2025.08.12, 16:00'
-};
+import { getSoundtrackById, updateSoundtrack, deleteSoundtrack } from '@/lib/audio-api';
+import { Soundtrack } from '@/types';
 
 export default function AudioDetailPage() {
   const params = useParams();
@@ -35,26 +14,49 @@ export default function AudioDetailPage() {
   const router = useRouter();
   const mode = searchParams.get('mode') || 'view'; // 'view' or 'edit'
   
-  const [audio, setAudio] = useState<AudioFile>(mockAudio);
-  const [formData, setFormData] = useState<AudioFile>(mockAudio);
+  const [soundtrack, setSoundtrack] = useState<Soundtrack | null>(null);
+  const [formData, setFormData] = useState<Partial<Soundtrack>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
+  // Fetch soundtrack data from API
   useEffect(() => {
-    // Simulate loading audio data
-    const loadAudio = async () => {
+    const fetchSoundtrack = async () => {
+      if (!params.id) return;
+      
       setIsLoading(true);
-      // In a real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setAudio(mockAudio);
-      setFormData(mockAudio);
-      setIsLoading(false);
+      setError(null);
+      
+      try {
+        const result = await getSoundtrackById(Number(params.id));
+        
+        if (result.code === 0 && result.data) {
+          setSoundtrack(result.data);
+          setFormData({
+            title: result.data.title,
+            composer: result.data.composer,
+            category: result.data.category,
+            cover: result.data.cover,
+            url: result.data.url
+          });
+        } else {
+          setError(result.error || '获取音频信息失败');
+        }
+      } catch (err) {
+        console.error('Error fetching soundtrack:', err);
+        setError('获取音频信息时发生错误');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    loadAudio();
+    fetchSoundtrack();
   }, [params.id]);
 
-  const handleInputChange = (field: keyof AudioFile, value: string) => {
+  const handleInputChange = (field: keyof Soundtrack, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -62,23 +64,77 @@ export default function AudioDetailPage() {
   };
 
   const handleSave = async () => {
-    setIsSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!soundtrack || !params.id) return;
     
-    // Update the audio with new data
-    setAudio(formData);
-    setIsSaving(false);
+    setIsSaving(true);
+    setError(null);
+    
+    try {
+      const result = await updateSoundtrack(Number(params.id), formData);
+      
+      if (result.code === 0 && result.data) {
+        // Update local state with new data
+        setSoundtrack(result.data);
+        setFormData({
+          title: result.data.title,
+          composer: result.data.composer,
+          category: result.data.category,
+          cover: result.data.cover,
+          url: result.data.url
+        });
+        
+        // Switch back to view mode
+        router.push(`/posts/audio/${params.id}?mode=view`);
+      } else {
+        setError(result.error || '更新失败');
+      }
+    } catch (err) {
+      console.error('Error updating soundtrack:', err);
+      setError('更新音频时发生错误');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!soundtrack) return;
+    
+    // Reset form data to original soundtrack data
+    setFormData({
+      title: soundtrack.title,
+      composer: soundtrack.composer,
+      category: soundtrack.category,
+      cover: soundtrack.cover,
+      url: soundtrack.url
+    });
     
     // Switch back to view mode
     router.push(`/posts/audio/${params.id}?mode=view`);
   };
 
-  const handleCancel = () => {
-    // Reset form data to original audio
-    setFormData(audio);
-    // Switch back to view mode
-    router.push(`/posts/audio/${params.id}?mode=view`);
+  const handleDelete = async () => {
+    if (!soundtrack || !params.id) return;
+    
+    setIsDeleting(true);
+    setError(null);
+    
+    try {
+      const result = await deleteSoundtrack(Number(params.id));
+      
+      if (result.code === 0) {
+        // Successfully deleted, redirect to audio list
+        router.push('/posts/audio');
+      } else {
+        setError(result.error || '删除失败');
+        setShowDeleteConfirm(false);
+      }
+    } catch (err) {
+      console.error('Error deleting soundtrack:', err);
+      setError('删除音频时发生错误');
+      setShowDeleteConfirm(false);
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleEdit = () => {
@@ -91,6 +147,18 @@ export default function AudioDetailPage() {
         <CMSLayout>
           <div className="flex items-center justify-center h-64">
             <div className="text-gray-500">加载中...</div>
+          </div>
+        </CMSLayout>
+      </ProtectedRoute>
+    );
+  }
+
+  if (!soundtrack) {
+    return (
+      <ProtectedRoute>
+        <CMSLayout>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">音频不存在或加载失败</div>
           </div>
         </CMSLayout>
       </ProtectedRoute>
@@ -112,14 +180,34 @@ export default function AudioDetailPage() {
               </p>
             </div>
             {mode === 'view' && (
-              <button
-                onClick={handleEdit}
-                className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                编辑音频
-              </button>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleEdit}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  编辑音频
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                >
+                  删除音频
+                </button>
+              </div>
             )}
           </div>
+
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">错误</h3>
+                  <div className="mt-2 text-sm text-red-700">{error}</div>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Audio Metadata Card */}
           <div className="bg-white shadow rounded-lg">
@@ -134,7 +222,7 @@ export default function AudioDetailPage() {
                   </label>
                   <input
                     type="text"
-                    value={audio.id}
+                    value={soundtrack?.id}
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
                   />
@@ -145,7 +233,7 @@ export default function AudioDetailPage() {
                   </label>
                   <input
                     type="text"
-                    value={audio.createdAt}
+                    value={soundtrack?.created_at}
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
                   />
@@ -156,7 +244,7 @@ export default function AudioDetailPage() {
                   </label>
                   <input
                     type="text"
-                    value={audio.updatedAt}
+                    value={soundtrack?.updated_at}
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
                   />
@@ -198,13 +286,25 @@ export default function AudioDetailPage() {
                   </label>
                   <div className="flex items-center space-x-4">
                     <div className="h-20 w-20 rounded-md bg-gray-200 flex items-center justify-center overflow-hidden">
-                      <Image
-                        src={audio.cover}
-                        alt="Audio cover"
-                        width={80}
-                        height={80}
-                        className="object-cover"
-                      />
+                      {soundtrack?.cover ? (
+                        <Image
+                          src={soundtrack.cover}
+                          alt="Audio cover"
+                          width={80}
+                          height={80}
+                          className="object-cover"
+                          onError={(e) => {
+                            // Fallback to placeholder if image fails
+                            const target = e.target as HTMLImageElement;
+                            target.style.display = 'none';
+                            target.nextElementSibling?.classList.remove('hidden');
+                          }}
+                          unoptimized={true}
+                        />
+                      ) : null}
+                      <div className={`w-full h-full flex items-center justify-center text-gray-400 text-xs ${soundtrack?.cover ? 'hidden' : ''}`}>
+                        <span>无封面</span>
+                      </div>
                     </div>
                     {mode === 'edit' && (
                       <button className="text-purple-600 hover:text-purple-700 text-sm font-medium">
@@ -228,11 +328,10 @@ export default function AudioDetailPage() {
                       mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
                     }`}
                   >
-                    <option value="Focus">Focus</option>
-                    <option value="Relaxation">Relaxation</option>
-                    <option value="Meditation">Meditation</option>
-                    <option value="Workout">Workout</option>
-                    <option value="Sleep">Sleep</option>
+                    <option value="focus">Focus</option>
+                    <option value="calm">Calm</option>
+                    <option value="relax">Relax</option>
+                    <option value="测试分类">测试分类</option>
                   </select>
                 </div>
 
@@ -277,23 +376,59 @@ export default function AudioDetailPage() {
 
           {/* Action Buttons - Only show in edit mode */}
           {mode === 'edit' && (
-            <div className="flex justify-end space-x-3">
+            <div className="flex justify-between items-center">
               <button
-                onClick={handleCancel}
-                className="px-4 py-2 border border-pink-300 text-pink-700 bg-white hover:bg-pink-50 rounded-md text-sm font-medium transition-colors"
+                onClick={() => setShowDeleteConfirm(true)}
+                disabled={isDeleting}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-md text-sm font-medium transition-colors"
               >
-                取消更新
+                {isDeleting ? '删除中...' : '删除音频'}
               </button>
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
-              >
-                {isSaving ? '保存中...' : '更新'}
-              </button>
+              <div className="flex space-x-3">
+                <button
+                  onClick={handleCancel}
+                  className="px-4 py-2 border border-pink-300 text-pink-700 bg-white hover:bg-pink-50 rounded-md text-sm font-medium transition-colors"
+                >
+                  取消更新
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
+                >
+                  {isSaving ? '保存中...' : '更新'}
+                </button>
+              </div>
             </div>
           )}
         </div>
+
+        {/* Delete Confirmation Modal */}
+        {showDeleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">确认删除</h3>
+              <p className="text-sm text-gray-500 mb-6">
+                确定要删除音频 &quot;{soundtrack?.title}&quot; 吗？此操作无法撤销。
+              </p>
+              <div className="flex justify-end space-x-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 bg-white hover:bg-gray-50 rounded-md text-sm font-medium transition-colors"
+                >
+                  取消
+                </button>
+                <button
+                  onClick={handleDelete}
+                  disabled={isDeleting}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-md text-sm font-medium transition-colors"
+                >
+                  {isDeleting ? '删除中...' : '确认删除'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </CMSLayout>
     </ProtectedRoute>
   );

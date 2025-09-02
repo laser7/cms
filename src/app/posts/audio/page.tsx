@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation';
 import { FiPlay, FiTrash2, FiEye, FiEdit3, FiRefreshCw } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { getSoundtracks, deleteSoundtrack } from '@/lib/audio-api';
+import CreateSoundtrackModal from '@/components/CreateSoundtrackModal';
+import { getSoundtracks, deleteSoundtrack, isRealAudioFile } from '@/lib/audio-api';
 import { Soundtrack, SoundtrackListParams } from '@/types';
 
 export default function AudioManagementPage() {
@@ -21,21 +22,7 @@ export default function AudioManagementPage() {
   const [total, setTotal] = useState(0);
   const [playingId, setPlayingId] = useState<number | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
-
-  // Helper function to check if URL is a real audio file
-  const isRealAudioFile = (url: string): boolean => {
-    const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
-    const hasAudioExtension = audioExtensions.some(ext => url.toLowerCase().includes(ext));
-    
-    // Check for common placeholder/example domains
-    const placeholderDomains = ['example.com', 'placeholder.com', 'test.com', 'dummy.com'];
-    const isPlaceholder = placeholderDomains.some(domain => url.includes(domain));
-    
-    // Check if URL looks like a real file (not just a page)
-    const isLikelyFile = url.includes('/') && !url.includes('?') && !url.includes('#');
-    
-    return hasAudioExtension && !isPlaceholder && isLikelyFile;
-  };
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   // Fetch soundtracks from API
   const fetchSoundtracks = useCallback(async () => {
@@ -398,7 +385,10 @@ export default function AudioManagementPage() {
                     <FiRefreshCw className={loading ? 'animate-spin' : ''} size={16} />
                   </button>
                   
-                  <button className="bg-[#220646] hover:bg-[#8C7E9C] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
+                  <button 
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="bg-[#220646] hover:bg-[#8C7E9C] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                  >
                     + 上传音频
                   </button>
                 </div>
@@ -653,6 +643,16 @@ export default function AudioManagementPage() {
             </div>
           )}
         </div>
+
+        {/* Create Soundtrack Modal */}
+        <CreateSoundtrackModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={() => {
+            setIsCreateModalOpen(false);
+            fetchSoundtracks();
+          }}
+        />
       </CMSLayout>
     </ProtectedRoute>
   );
