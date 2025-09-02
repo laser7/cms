@@ -96,3 +96,39 @@ export interface RawApiResponse<T = unknown> {
   data: T;
   msg: string;
 } 
+
+export interface AI {
+  id: number;
+  api: string;
+  function: string;
+  model: string;
+  page: string;
+  prompt: string;
+  created_at: string;
+  updated_at: string;
+  processing_time?: number;
+  request?: string;
+  response?: string;
+}
+
+export interface AIListResponse {
+  list: AI[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export interface AIListParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  page_filter?: string;
+}
+
+export interface CreateAIData {
+  api: string;
+  function: string;
+  model: string;
+  page: string;
+  prompt: string;
+} 

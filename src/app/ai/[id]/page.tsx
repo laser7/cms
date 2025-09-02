@@ -4,35 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-
-interface AIFeature {
-  id: string;
-  api: string;
-  page: string;
-  prompt: string;
-  createdAt: string;
-  rawApi: string;
-  function: string;
-  model: string;
-  request: string;
-  response: string;
-  processingTime: string;
-}
-
-// Mock data
-const mockAIFeature: AIFeature = {
-  id: '01',
-  api: '/api/v1/ai/chat',
-  page: '聊天页面',
-  prompt: '你是一个智能助手，请帮助用户解决问题。',
-  createdAt: '2025.08.12, 12:30',
-  rawApi: '/api/v1/ai/chat',
-  function: '智能对话助手，提供问题解答和对话服务',
-  model: 'GPT-4',
-  request: '{\n  "message": "你好，请介绍一下自己",\n  "model": "gpt-4",\n  "temperature": 0.7\n}',
-  response: '{\n  "response": "你好！我是一个AI助手，很高兴为您服务。我可以帮助您回答问题、提供信息、进行对话交流等。有什么我可以帮助您的吗？",\n  "status": "success",\n  "timestamp": "2025-08-12T12:30:00Z"\n}',
-  processingTime: '2.3s'
-};
+import { getAIById, updateAI, deleteAI } from '@/lib/ai-api';
+import { AI } from '@/types';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 export default function AIFeatureDetailPage() {
   const params = useParams();
@@ -40,26 +14,51 @@ export default function AIFeatureDetailPage() {
   const router = useRouter();
   const mode = searchParams.get('mode') || 'view'; // 'view' or 'edit'
   
-  const [aiFeature, setAIFeature] = useState<AIFeature>(mockAIFeature);
-  const [formData, setFormData] = useState<AIFeature>(mockAIFeature);
+  const [aiFeature, setAIFeature] = useState<AI | null>(null);
+  const [formData, setFormData] = useState<Partial<AI>>({});
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
+  // Fetch AI feature data from API
   useEffect(() => {
-    // Simulate loading AI feature data
-    const loadAIFeature = async () => {
+    const fetchAIFeature = async () => {
+      if (!params.id) return;
+      
       setIsLoading(true);
-      // In a real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setAIFeature(mockAIFeature);
-      setFormData(mockAIFeature);
-      setIsLoading(false);
+      setError(null);
+      
+      try {
+        const result = await getAIById(Number(params.id));
+        
+        if (result.code === 0 && result.data) {
+          setAIFeature(result.data);
+          setFormData({
+            api: result.data.api,
+            function: result.data.function,
+            model: result.data.model,
+            page: result.data.page,
+            prompt: result.data.prompt,
+            request: result.data.request,
+            response: result.data.response
+          });
+        } else {
+          setError(result.error || '获取AI功能信息失败');
+        }
+      } catch (err) {
+        console.error('Error fetching AI feature:', err);
+        setError('获取AI功能信息时发生错误');
+      } finally {
+        setIsLoading(false);
+      }
     };
 
-    loadAIFeature();
+    fetchAIFeature();
   }, [params.id]);
 
-  const handleInputChange = (field: keyof AIFeature, value: string) => {
+  const handleInputChange = (field: keyof AI, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
@@ -67,23 +66,80 @@ export default function AIFeatureDetailPage() {
   };
 
   const handleSave = async () => {
-    setIsSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!aiFeature || !params.id) return;
     
-    // Update the AI feature with new data
-    setAIFeature(formData);
-    setIsSaving(false);
+    setIsSaving(true);
+    setError(null);
+    
+    try {
+      const result = await updateAI(Number(params.id), formData);
+      
+      if (result.code === 0 && result.data) {
+        // Update local state with new data
+        setAIFeature(result.data);
+        setFormData({
+          api: result.data.api,
+          function: result.data.function,
+          model: result.data.model,
+          page: result.data.page,
+          prompt: result.data.prompt,
+          request: result.data.request,
+          response: result.data.response
+        });
+        
+        // Switch back to view mode
+        router.push(`/ai/${params.id}?mode=view`);
+      } else {
+        setError(result.error || '更新失败');
+      }
+    } catch (err) {
+      console.error('Error updating AI feature:', err);
+      setError('更新AI功能时发生错误');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleCancel = () => {
+    if (!aiFeature) return;
+    
+    // Reset form data to original AI feature data
+    setFormData({
+      api: aiFeature.api,
+      function: aiFeature.function,
+      model: aiFeature.model,
+      page: aiFeature.page,
+      prompt: aiFeature.prompt,
+      request: aiFeature.request,
+      response: aiFeature.response
+    });
     
     // Switch back to view mode
     router.push(`/ai/${params.id}?mode=view`);
   };
 
-  const handleCancel = () => {
-    // Reset form data to original AI feature
-    setFormData(aiFeature);
-    // Switch back to view mode
-    router.push(`/ai/${params.id}?mode=view`);
+  const handleDelete = async () => {
+    if (!aiFeature || !params.id) return;
+    
+    setIsDeleting(true);
+    setError(null);
+    
+    try {
+      const result = await deleteAI(Number(params.id));
+      
+      if (result.code === 0) {
+        // Successfully deleted, redirect to AI list
+        router.push('/ai');
+      } else {
+        setError(result.error || '删除失败');
+      }
+    } catch (err) {
+      console.error('Error deleting AI feature:', err);
+      setError('删除AI功能时发生错误');
+    } finally {
+      setIsDeleting(false);
+      setShowDeleteConfirm(false);
+    }
   };
 
   const handleEdit = () => {
@@ -96,6 +152,18 @@ export default function AIFeatureDetailPage() {
         <CMSLayout>
           <div className="flex items-center justify-center h-64">
             <div className="text-gray-500">加载中...</div>
+          </div>
+        </CMSLayout>
+      </ProtectedRoute>
+    );
+  }
+
+  if (!aiFeature) {
+    return (
+      <ProtectedRoute>
+        <CMSLayout>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">AI功能不存在或加载失败</div>
           </div>
         </CMSLayout>
       </ProtectedRoute>
@@ -139,7 +207,7 @@ export default function AIFeatureDetailPage() {
                   </label>
                   <input
                     type="text"
-                    value={aiFeature.id}
+                    value={aiFeature?.id}
                     disabled
                     className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
                   />
@@ -148,12 +216,12 @@ export default function AIFeatureDetailPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     创建时间
                   </label>
-                  <input
-                    type="text"
-                    value={aiFeature.createdAt}
-                    disabled
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
-                  />
+                                      <input
+                      type="text"
+                      value={aiFeature?.created_at}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+                    />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -200,21 +268,7 @@ export default function AIFeatureDetailPage() {
                     placeholder="输入提示词..."
                   />
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Raw API
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.rawApi}
-                    onChange={(e) => handleInputChange('rawApi', e.target.value)}
-                    disabled={mode === 'view'}
-                    className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
-                    }`}
-                    placeholder="输入API端点..."
-                  />
-                </div>
+
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     作用
@@ -253,12 +307,12 @@ export default function AIFeatureDetailPage() {
           <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-base leading-6 font-medium text-gray-900 mb-4">
-                请求
+                请求参数
               </h3>
               <div className="relative">
                 <textarea
-                  rows={12}
-                  value={formData.request}
+                  rows={6}
+                  value={formData.request || ''}
                   onChange={(e) => handleInputChange('request', e.target.value)}
                   disabled={mode === 'view'}
                   className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent resize-none font-mono text-sm ${
@@ -266,11 +320,6 @@ export default function AIFeatureDetailPage() {
                   }`}
                   placeholder="输入AI请求参数..."
                 />
-                {mode === 'edit' && (
-                  <button className="absolute top-2 right-2 bg-pink-600 hover:bg-pink-700 text-white px-3 py-1 rounded text-xs font-medium transition-colors">
-                    发送
-                  </button>
-                )}
               </div>
             </div>
           </div>
@@ -282,7 +331,7 @@ export default function AIFeatureDetailPage() {
                 处理时间
               </h3>
               <div className="text-lg font-mono text-gray-900">
-                {formData.processingTime}
+                {aiFeature?.processing_time || 0}ms
               </div>
             </div>
           </div>
@@ -294,8 +343,8 @@ export default function AIFeatureDetailPage() {
                 返回
               </h3>
               <textarea
-                rows={16}
-                value={formData.response}
+                rows={8}
+                value={formData.response || ''}
                 onChange={(e) => handleInputChange('response', e.target.value)}
                 disabled={mode === 'view'}
                 className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent resize-none font-mono text-sm ${
@@ -306,25 +355,44 @@ export default function AIFeatureDetailPage() {
             </div>
           </div>
 
-          {/* Action Buttons - Only show in edit mode */}
-          {mode === 'edit' && (
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 border border-pink-300 text-pink-700 bg-white hover:bg-pink-50 rounded-md text-sm font-medium transition-colors"
-              >
-                取消更新
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                className="px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
-              >
-                {isSaving ? '保存中...' : '更新'}
-              </button>
-            </div>
-          )}
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-3">
+            {mode === 'edit'&&  (
+              <>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  disabled={isDeleting}
+                  className="px-4 py-2 bg-red-600 hover:bg-red-700 disabled:bg-red-400 text-white rounded-md text-sm font-medium transition-colors"
+                >
+                  {isDeleting ? '删除中...' : '删除'}
+                </button>
+                <button
+                  onClick={handleCancel}
+                  className="px-4 py-2 border border-pink-300 text-pink-700 bg-white hover:bg-pink-50 rounded-md text-sm font-medium transition-colors"
+                >
+                  取消更新
+                </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="px-4 py-2 bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
+                >
+                  {isSaving ? '保存中...' : '更新'}
+                </button>
+              </>
+            )}
+          </div>
         </div>
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={showDeleteConfirm}
+          onClose={() => setShowDeleteConfirm(false)}
+          onConfirm={handleDelete}
+          title="确认删除"
+          message={`确定要删除AI功能 "${aiFeature?.api}" 吗？此操作无法撤销。`}
+          isLoading={isDeleting}
+        />
       </CMSLayout>
     </ProtectedRoute>
   );

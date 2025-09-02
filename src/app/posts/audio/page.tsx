@@ -8,6 +8,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import CreateSoundtrackModal from '@/components/CreateSoundtrackModal';
 import { getSoundtracks, deleteSoundtrack, isRealAudioFile } from '@/lib/audio-api';
 import { Soundtrack, SoundtrackListParams } from '@/types';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 export default function AudioManagementPage() {
   const router = useRouter();
@@ -23,6 +24,7 @@ export default function AudioManagementPage() {
   const [playingId, setPlayingId] = useState<number | null>(null);
   const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
 
   // Fetch soundtracks from API
   const fetchSoundtracks = useCallback(async () => {
@@ -91,24 +93,26 @@ export default function AudioManagementPage() {
   };
 
   const handleDeleteSoundtrack = async (id: number) => {
-    if (confirm('确定要删除这个音频文件吗？')) {
-      try {
-        const response = await deleteSoundtrack(id);
-        if (response.code === 0) {
-          // Refresh the list
-          fetchSoundtracks();
-          // Remove from selected rows
-          const newSelected = new Set(selectedRows);
-          newSelected.delete(id);
-          setSelectedRows(newSelected);
-        } else {
-          setError(response.msg || '删除失败');
-        }
-      } catch (err) {
-        setError('删除时发生错误');
-        console.error('Error deleting soundtrack:', err);
+    try {
+      const response = await deleteSoundtrack(id);
+      if (response.code === 0) {
+        // Refresh the list
+        fetchSoundtracks();
+        // Remove from selected rows
+        const newSelected = new Set(selectedRows);
+        newSelected.delete(id);
+        setSelectedRows(newSelected);
+      } else {
+        setError(response.msg || '删除失败');
       }
+    } catch (err) {
+      setError('删除时发生错误');
+      console.error('Error deleting soundtrack:', err);
     }
+  };
+
+  const confirmDeleteSoundtrack = (id: number) => {
+    setShowDeleteConfirm(id);
   };
 
   const handleBulkDelete = async () => {
@@ -521,7 +525,7 @@ export default function AudioManagementPage() {
                             </>
                           )}
                           <button 
-                            onClick={() => handleDeleteSoundtrack(soundtrack.id)}
+                            onClick={() => confirmDeleteSoundtrack(soundtrack.id)}
                             className="text-red-400 hover:text-red-600 p-1"
                             title="删除"
                           >
@@ -652,6 +656,20 @@ export default function AudioManagementPage() {
             setIsCreateModalOpen(false);
             fetchSoundtracks();
           }}
+        />
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={showDeleteConfirm !== null}
+          onClose={() => setShowDeleteConfirm(null)}
+          onConfirm={() => {
+            if (showDeleteConfirm) {
+              handleDeleteSoundtrack(showDeleteConfirm);
+              setShowDeleteConfirm(null);
+            }
+          }}
+          title="确认删除"
+          message="确定要删除这个音频文件吗？此操作无法撤销。"
         />
       </CMSLayout>
     </ProtectedRoute>
