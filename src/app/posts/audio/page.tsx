@@ -1,111 +1,99 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiPlay, FiTrash2, FiEye, FiEdit3 } from 'react-icons/fi';
+import { FiPlay, FiTrash2, FiEye, FiEdit3, FiRefreshCw } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-
-interface AudioFile {
-  id: string;
-  title: string;
-  duration: string;
-  size: string;
-  format: string;
-  uploadedAt: string;
-  status: 'published' | 'draft' | 'processing';
-}
-
-const initialAudioFiles: AudioFile[] = [
-  {
-    id: 'A001',
-    title: '易经讲解 - 第一卦 乾卦',
-    duration: '15:30',
-    size: '12.5 MB',
-    format: 'MP3',
-    uploadedAt: '2025.08.12, 12:30',
-    status: 'published'
-  },
-  {
-    id: 'A002',
-    title: '易经讲解 - 第二卦 坤卦',
-    duration: '18:45',
-    size: '15.2 MB',
-    format: 'MP3',
-    uploadedAt: '2025.08.12, 11:15',
-    status: 'published'
-  },
-  {
-    id: 'A003',
-    title: '易经讲解 - 第三卦 屯卦',
-    duration: '22:10',
-    size: '18.8 MB',
-    format: 'MP3',
-    uploadedAt: '2025.08.11, 16:20',
-    status: 'draft'
-  },
-  {
-    id: 'A004',
-    title: '易经讲解 - 第四卦 蒙卦',
-    duration: '19:30',
-    size: '16.1 MB',
-    format: 'MP3',
-    uploadedAt: '2025.08.11, 14:45',
-    status: 'processing'
-  },
-  {
-    id: 'A005',
-    title: '易经讲解 - 第五卦 需卦',
-    duration: '21:15',
-    size: '17.9 MB',
-    format: 'MP3',
-    uploadedAt: '2025.08.10, 09:30',
-    status: 'published'
-  },
-  {
-    id: 'A006',
-    title: '易经讲解 - 第六卦 讼卦',
-    duration: '16:45',
-    size: '13.8 MB',
-    format: 'MP3',
-    uploadedAt: '2025.08.10, 08:15',
-    status: 'published'
-  },
-  {
-    id: 'A007',
-    title: '易经讲解 - 第七卦 师卦',
-    duration: '24:20',
-    size: '20.5 MB',
-    format: 'MP3',
-    uploadedAt: '2025.08.09, 17:30',
-    status: 'draft'
-  },
-  {
-    id: 'A008',
-    title: '易经讲解 - 第八卦 比卦',
-    duration: '20:10',
-    size: '16.9 MB',
-    format: 'MP3',
-    uploadedAt: '2025.08.09, 15:45',
-    status: 'published'
-  }
-];
+import { getSoundtracks, deleteSoundtrack } from '@/lib/audio-api';
+import { Soundtrack, SoundtrackListParams } from '@/types';
 
 export default function AudioManagementPage() {
   const router = useRouter();
-  const [audioFiles] = useState<AudioFile[]>(initialAudioFiles);
-  const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
+  const [soundtracks, setSoundtracks] = useState<Soundtrack[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [playingId, setPlayingId] = useState<number | null>(null);
+  const [audioElement, setAudioElement] = useState<HTMLAudioElement | null>(null);
+
+  // Helper function to check if URL is a real audio file
+  const isRealAudioFile = (url: string): boolean => {
+    const audioExtensions = ['.mp3', '.wav', '.ogg', '.m4a', '.aac', '.flac'];
+    const hasAudioExtension = audioExtensions.some(ext => url.toLowerCase().includes(ext));
+    
+    // Check for common placeholder/example domains
+    const placeholderDomains = ['example.com', 'placeholder.com', 'test.com', 'dummy.com'];
+    const isPlaceholder = placeholderDomains.some(domain => url.includes(domain));
+    
+    // Check if URL looks like a real file (not just a page)
+    const isLikelyFile = url.includes('/') && !url.includes('?') && !url.includes('#');
+    
+    return hasAudioExtension && !isPlaceholder && isLikelyFile;
+  };
+
+  // Fetch soundtracks from API
+  const fetchSoundtracks = useCallback(async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      
+      const params: SoundtrackListParams = {
+        page: currentPage,
+        page_size: pageSize,
+        search: searchTerm || undefined,
+        category: categoryFilter || undefined
+      };
+
+      console.log('Fetching soundtracks with params:', params);
+      const response = await getSoundtracks(params);
+      console.log('API Response:', response);
+      
+      if (response.code === 0 && response.data) {
+        console.log('Setting soundtracks:', response.data.list);
+        setSoundtracks(response.data.list);
+        setTotal(response.data.total);
+      } else {
+        console.error('API Error:', response.msg, response.error);
+        setError(response.msg || 'Failed to fetch soundtracks');
+      }
+    } catch (err) {
+      console.error('Network Error:', err);
+      setError('Network error occurred');
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, pageSize, searchTerm, categoryFilter]);
+
+  // Initial fetch
+  useEffect(() => {
+    fetchSoundtracks();
+  }, [fetchSoundtracks]);
+
+  // Search and filter effect
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setCurrentPage(1); // Reset to first page when searching
+      fetchSoundtracks();
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [searchTerm, categoryFilter, fetchSoundtracks]);
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedRows(new Set(audioFiles.map(a => a.id)));
+      setSelectedRows(new Set(soundtracks?.map(s => s.id)));
     } else {
       setSelectedRows(new Set());
     }
   };
 
-  const handleSelectRow = (id: string, checked: boolean) => {
+  const handleSelectRow = (id: number, checked: boolean) => {
     const newSelected = new Set(selectedRows);
     if (checked) {
       newSelected.add(id);
@@ -115,49 +103,196 @@ export default function AudioManagementPage() {
     setSelectedRows(newSelected);
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'published':
-        return 'bg-green-100 text-green-800';
-      case 'draft':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'processing':
-        return 'bg-blue-100 text-blue-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const handleDeleteSoundtrack = async (id: number) => {
+    if (confirm('确定要删除这个音频文件吗？')) {
+      try {
+        const response = await deleteSoundtrack(id);
+        if (response.code === 0) {
+          // Refresh the list
+          fetchSoundtracks();
+          // Remove from selected rows
+          const newSelected = new Set(selectedRows);
+          newSelected.delete(id);
+          setSelectedRows(newSelected);
+        } else {
+          setError(response.msg || '删除失败');
+        }
+      } catch (err) {
+        setError('删除时发生错误');
+        console.error('Error deleting soundtrack:', err);
+      }
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'published':
-        return '已发布';
-      case 'draft':
-        return '草稿';
-      case 'processing':
-        return '处理中';
-      default:
-        return '未知';
+  const handleBulkDelete = async () => {
+    if (selectedRows.size === 0) return;
+    
+    if (confirm(`确定要删除选中的 ${selectedRows.size} 个音频文件吗？`)) {
+      try {
+        const deletePromises = Array.from(selectedRows).map(id => deleteSoundtrack(id));
+        await Promise.all(deletePromises);
+        
+        // Refresh the list and clear selection
+        fetchSoundtracks();
+        setSelectedRows(new Set());
+      } catch (err) {
+        setError('批量删除时发生错误');
+        console.error('Error bulk deleting soundtracks:', err);
+      }
     }
   };
 
-  const filteredAudioFiles = audioFiles.filter(audio =>
-    audio.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    audio.id.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Audio playing functions
+  const handlePlayAudio = (soundtrack: Soundtrack) => {
+    console.log('Attempting to play audio:', soundtrack.title, 'URL:', soundtrack.url);
+    
+    // Stop any currently playing audio
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+    }
 
-  const handleViewAudio = (id: string) => {
+    // Check if URL is a valid audio file - more strict validation
+    const isDirectAudioFile = isRealAudioFile(soundtrack.url);
+    
+    if (!isDirectAudioFile) {
+      console.warn('URL does not appear to be a direct audio file:', soundtrack.url);
+      setError(`无法播放音频：URL "${soundtrack.url}" 不是有效的音频文件链接。请检查音频文件格式或联系管理员。`);
+      return;
+    }
+
+    // Create new audio element
+    const audio = new Audio(soundtrack.url);
+    
+    // Add event listeners before playing
+    audio.addEventListener('loadeddata', () => {
+      console.log('Audio loaded successfully:', soundtrack.title);
+    });
+
+    audio.addEventListener('canplay', () => {
+      console.log('Audio can start playing:', soundtrack.title);
+    });
+
+    audio.addEventListener('ended', () => {
+      console.log('Audio playback ended:', soundtrack.title);
+      setPlayingId(null);
+      setAudioElement(null);
+    });
+
+    audio.addEventListener('error', (e) => {
+      console.error('Audio playback error for:', soundtrack.title);
+      console.error('Error details:', e);
+      console.error('Audio error code:', audio.error?.code);
+      console.error('Audio error message:', audio.error?.message);
+      
+      let errorMessage = '音频播放失败';
+      
+      if (audio.error) {
+        switch (audio.error.code) {
+          case MediaError.MEDIA_ERR_ABORTED:
+            errorMessage = '音频播放被中止';
+            break;
+          case MediaError.MEDIA_ERR_NETWORK:
+            errorMessage = '网络错误，无法加载音频文件';
+            break;
+          case MediaError.MEDIA_ERR_DECODE:
+            errorMessage = '音频文件格式不支持或文件损坏';
+            break;
+          case MediaError.MEDIA_ERR_SRC_NOT_SUPPORTED:
+            errorMessage = '音频文件格式不支持或URL无效';
+            break;
+          default:
+            errorMessage = `音频播放失败 (错误代码: ${audio.error.code})`;
+        }
+      }
+      
+      setError(`${errorMessage}：${soundtrack.title}`);
+      setPlayingId(null);
+      setAudioElement(null);
+    });
+
+    // Start playing
+    audio.play().then(() => {
+      console.log('Audio started playing:', soundtrack.title);
+      setPlayingId(soundtrack.id);
+      setAudioElement(audio);
+      setError(null); // Clear any previous errors
+    }).catch((err) => {
+      console.error('Failed to start audio playback:', err);
+      console.error('Audio URL:', soundtrack.url);
+      
+      let errorMessage = '无法播放音频';
+      if (err.name === 'NotSupportedError') {
+        errorMessage = '浏览器不支持此音频格式';
+      } else if (err.name === 'NotAllowedError') {
+        errorMessage = '用户未授权播放音频';
+      } else if (err.name === 'AbortError') {
+        errorMessage = '音频播放被中止';
+      }
+      
+      setError(`${errorMessage}：${soundtrack.title}`);
+      setPlayingId(null);
+      setAudioElement(null);
+    });
+  };
+
+  const handleStopAudio = () => {
+    if (audioElement) {
+      audioElement.pause();
+      audioElement.currentTime = 0;
+      setPlayingId(null);
+      setAudioElement(null);
+    }
+  };
+
+  // Cleanup audio on component unmount
+  useEffect(() => {
+    return () => {
+      if (audioElement) {
+        audioElement.pause();
+        audioElement.currentTime = 0;
+      }
+    };
+  }, [audioElement]);
+
+  const handleViewAudio = (id: number) => {
     router.push(`/posts/audio/${id}?mode=view`);
   };
 
-  const handleEditAudio = (id: string) => {
+  const handleEditAudio = (id: number) => {
     router.push(`/posts/audio/${id}?mode=edit`);
   };
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handlePageSizeChange = (size: number) => {
+    setPageSize(size);
+    setCurrentPage(1);
+  };
+
+  const totalPages = Math.ceil(total / pageSize);
+
+  if (loading && soundtracks?.length === 0) {
+    return (
+      <ProtectedRoute>
+        <CMSLayout>
+          <div className="flex items-center justify-center h-64">
+            <div className="flex items-center space-x-2">
+              <FiRefreshCw className="animate-spin" size={20} />
+              <span>加载中...</span>
+            </div>
+          </div>
+        </CMSLayout>
+      </ProtectedRoute>
+    );
+  }
 
   return (
     <ProtectedRoute>
       <CMSLayout>
-      <div className="space-y-4">
+        <div className="space-y-4">
           {/* Page header */}
           <div className="flex flex-row gap-3">
             <h1 className="text-xl font-bold text-gray-900">音频管理</h1>
@@ -165,6 +300,40 @@ export default function AudioManagementPage() {
               管理易经相关的音频文件和内容
             </p>
           </div>
+
+          {/* Error display */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">错误</h3>
+                  <div className="mt-2 text-sm text-red-700">
+                    <p>{error}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Audio Player Status */}
+          {playingId && (
+            <div className="bg-green-50 border border-green-200 rounded-md p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                  <span className="text-sm font-medium text-green-800">
+                    正在播放: {soundtracks.find(s => s.id === playingId)?.title}
+                  </span>
+                </div>
+                <button
+                  onClick={handleStopAudio}
+                  className="px-3 py-1 text-sm font-medium text-green-700 bg-green-100 border border-green-300 rounded-md hover:bg-green-200 transition-colors"
+                >
+                  停止播放
+                </button>
+              </div>
+            </div>
+          )}
 
           {/* Controls */}
           <div className="bg-white shadow rounded-lg">
@@ -174,25 +343,43 @@ export default function AudioManagementPage() {
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      checked={selectedRows.size === audioFiles.length}
+                      checked={selectedRows.size === soundtracks?.length && soundtracks?.length > 0}
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                     />
-                 
+                    <span className="text-sm text-gray-600">
+                      {selectedRows.size} / {soundtracks?.length}
+                    </span>
                   </div>
-                  <button className="text-sm text-gray-600 hover:text-gray-900">
-                    选择列
-                  </button>
-                  <button className="text-sm text-gray-600 hover:text-gray-900">
-                    ↕️
-                  </button>
+                  {selectedRows.size > 0 && (
+                    <button 
+                      onClick={handleBulkDelete}
+                      className="text-sm text-red-600 hover:text-red-800 px-3 py-1 border border-red-300 rounded hover:bg-red-50"
+                    >
+                      删除选中 ({selectedRows.size})
+                    </button>
+                  )}
                 </div>
                 
                 <div className="flex items-center space-x-4">
+                  {/* Category filter */}
+                  <select
+                    value={categoryFilter}
+                    onChange={(e) => setCategoryFilter(e.target.value)}
+                    className="text-sm border border-gray-300 rounded px-3 py-2 focus:outline-none focus:ring-2 focus:ring-purple-500"
+                  >
+                    <option value="">所有分类</option>
+                    <option value="focus">Focus</option>
+                    <option value="calm">Calm</option>
+                    <option value="relax">Relax</option>
+                    <option value="测试分类">测试音频</option>
+                  </select>
+                  
+                  {/* Search */}
                   <div className="relative">
                     <input
                       type="text"
-                      placeholder="Q 搜索列表..."
+                      placeholder="搜索音频..."
                       value={searchTerm}
                       onChange={(e) => setSearchTerm(e.target.value)}
                       className="w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
@@ -201,9 +388,16 @@ export default function AudioManagementPage() {
                       <span className="text-gray-400">🔍</span>
                     </div>
                   </div>
-                  <button className="text-sm text-gray-600 hover:text-gray-900">
-                    ☰
+                  
+                  {/* Refresh button */}
+                  <button 
+                    onClick={fetchSoundtracks}
+                    disabled={loading}
+                    className="text-sm text-gray-600 hover:text-gray-900 p-2 rounded hover:bg-gray-100 disabled:opacity-50"
+                  >
+                    <FiRefreshCw className={loading ? 'animate-spin' : ''} size={16} />
                   </button>
+                  
                   <button className="bg-[#220646] hover:bg-[#8C7E9C] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors">
                     + 上传音频
                   </button>
@@ -221,7 +415,7 @@ export default function AudioManagementPage() {
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       <input
                         type="checkbox"
-                        checked={selectedRows.size === audioFiles.length}
+                        checked={selectedRows.size === soundtracks?.length && soundtracks?.length > 0}
                         onChange={(e) => handleSelectAll(e.target.checked)}
                         className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                       />
@@ -233,19 +427,16 @@ export default function AudioManagementPage() {
                       标题
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      时长
+                      作曲家
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      大小
+                      分类
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      格式
+                      封面
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      状态
-                    </th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      上传时间
+                      创建时间
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       操作
@@ -253,56 +444,110 @@ export default function AudioManagementPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {filteredAudioFiles.map((audio) => (
-                    <tr key={audio.id} className="hover:bg-gray-50">
+                  {soundtracks?.map((soundtrack) => (
+                    <tr key={soundtrack.id} className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <input
                           type="checkbox"
-                          checked={selectedRows.has(audio.id)}
-                          onChange={(e) => handleSelectRow(audio.id, e.target.checked)}
+                          checked={selectedRows.has(soundtrack.id)}
+                          onChange={(e) => handleSelectRow(soundtrack.id, e.target.checked)}
                           className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                         />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                        {audio.id}
+                        {soundtrack.id}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {audio.title}
+                        <div className="flex items-center space-x-2">
+                          <span>{soundtrack.title}</span>
+                          {playingId === soundtrack.id && (
+                            <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              🔊 播放中
+                            </span>
+                          )}
+                          {!isRealAudioFile(soundtrack.url) && (
+                            <button
+                              onClick={() => window.open(soundtrack.url, '_blank')}
+                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800 hover:bg-blue-200 cursor-pointer transition-colors"
+                              title="点击在新标签页中打开音频链接"
+                            >
+                              🔗 链接
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {audio.duration}
+                        {soundtrack.composer}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {audio.size}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {audio.format}
+                        {soundtrack.category}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(audio.status)}`}>
-                          {getStatusText(audio.status)}
-                        </span>
+                        {soundtrack.cover ? (
+                          <img 
+                            src={soundtrack.cover} 
+                            alt="封面" 
+                            className="w-12 h-12 object-cover rounded"
+                          />
+                        ) : (
+                          <div className="w-12 h-12 bg-gray-200 rounded flex items-center justify-center">
+                            <span className="text-xs text-gray-500">无封面</span>
+                          </div>
+                        )}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {audio.uploadedAt}
+                        {new Date(soundtrack.created_at).toLocaleDateString('zh-CN')}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                         <div className="flex items-center space-x-2">
-                          <button className="text-gray-400 hover:text-gray-600 p-1">
-                            <FiPlay size={16} />
-                          </button>
-                          <button className="text-gray-400 hover:text-gray-600 p-1">
+                          {playingId === soundtrack.id ? (
+                            <button 
+                              onClick={handleStopAudio}
+                              className="text-red-400 hover:text-red-600 p-1"
+                              title="停止播放"
+                            >
+                              <FiPlay size={16} className="transform rotate-90" />
+                            </button>
+                          ) : (
+                            <>
+                              {/* Show play button for real audio files, disabled button for others */}
+                              {isRealAudioFile(soundtrack.url) ? (
+                                <button 
+                                  onClick={() => handlePlayAudio(soundtrack)}
+                                  className="text-gray-400 hover:text-gray-600 p-1"
+                                  title="播放"
+                                >
+                                  <FiPlay size={16} />
+                                </button>
+                              ) : (
+                                <button 
+                                  disabled
+                                  className="text-gray-300 cursor-not-allowed p-1"
+                                  title="此音频无法直接播放"
+                                >
+                                  <FiPlay size={16} />
+                                </button>
+                              )}
+                            </>
+                          )}
+                          <button 
+                            onClick={() => handleDeleteSoundtrack(soundtrack.id)}
+                            className="text-red-400 hover:text-red-600 p-1"
+                            title="删除"
+                          >
                             <FiTrash2 size={16} />
                           </button>
                           <button 
-                            onClick={() => handleViewAudio(audio.id)}
+                            onClick={() => handleViewAudio(soundtrack.id)}
                             className="text-gray-400 hover:text-gray-600 p-1"
+                            title="查看"
                           >
                             <FiEye size={16} />
                           </button>
                           <button 
-                            onClick={() => handleEditAudio(audio.id)}
+                            onClick={() => handleEditAudio(soundtrack.id)}
                             className="text-gray-400 hover:text-gray-600 p-1"
+                            title="编辑"
                           >
                             <FiEdit3 size={16} />
                           </button>
@@ -311,44 +556,102 @@ export default function AudioManagementPage() {
                     </tr>
                   ))}
                 </tbody>
+                
+                {soundtracks?.length === 0 && !loading && (
+                  <tbody>
+                    <tr>
+                      <td colSpan={8} className="text-center py-12">
+                        <p className="text-gray-500">暂无音频文件</p>
+                      </td>
+                    </tr>
+                  </tbody>
+                )}
               </table>
             </div>
           </div>
 
           {/* Pagination */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
-              <div className="flex items-center space-x-2">
-                <button className="text-gray-400 hover:text-gray-600">
-                  ←
-                </button>
-                <button className="px-3 py-1 text-sm font-medium text-white bg-pink-500 rounded">
-                  1
-                </button>
-                <button className="px-3 py-1 text-sm font-medium text-gray-700 hover:text-gray-900">
-                  2
-                </button>
-                <button className="px-3 py-1 text-sm font-medium text-gray-700 hover:text-gray-900">
-                  3
-                </button>
-                <span className="text-gray-500">...</span>
-                <button className="px-3 py-1 text-sm font-medium text-gray-700 hover:text-gray-900">
-                  5
-                </button>
-                <button className="text-gray-400 hover:text-gray-600">
-                  →
-                </button>
-              </div>
-              <div className="flex items-center space-x-2">
-                <span className="text-sm text-gray-700">显示</span>
-                <select className="text-sm border border-gray-300 rounded px-2 py-1">
-                  <option>10行</option>
-                  <option>20行</option>
-                  <option>50行</option>
-                </select>
+          {totalPages > 1 && (
+            <div className="bg-white shadow rounded-lg">
+              <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+                <div className="flex items-center space-x-2">
+                  <button 
+                    onClick={() => handlePageChange(currentPage - 1)}
+                    disabled={currentPage === 1}
+                    className="text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    ←
+                  </button>
+                  
+                  {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    const page = i + 1;
+                    if (totalPages <= 5) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`px-3 py-1 text-sm font-medium rounded ${
+                            page === currentPage
+                              ? 'text-white bg-[#220646]'
+                              : 'text-gray-700 hover:text-gray-900'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    }
+                    
+                    // Show first page, current page, and last page with ellipsis
+                    if (page === 1 || page === totalPages || (page >= currentPage - 1 && page <= currentPage + 1)) {
+                      return (
+                        <button
+                          key={page}
+                          onClick={() => handlePageChange(page)}
+                          className={`px-3 py-1 text-sm font-medium rounded ${
+                            page === currentPage
+                              ? 'text-white bg-[#220646]'
+                              : 'text-gray-700 hover:text-gray-900'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      );
+                    }
+                    
+                    if (page === currentPage - 2 || page === currentPage + 2) {
+                      return <span key={page} className="text-gray-500">...</span>;
+                    }
+                    
+                    return null;
+                  })}
+                  
+                  <button 
+                    onClick={() => handlePageChange(currentPage + 1)}
+                    disabled={currentPage === totalPages}
+                    className="text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    →
+                  </button>
+                </div>
+                
+                <div className="flex items-center space-x-2">
+                  <span className="text-sm text-gray-700">显示</span>
+                  <select 
+                    value={pageSize}
+                    onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                    className="text-sm border border-gray-300 rounded px-2 py-1"
+                  >
+                    <option value={10}>10行</option>
+                    <option value={20}>20行</option>
+                    <option value={50}>50行</option>
+                  </select>
+                  <span className="text-sm text-gray-700">
+                    共 {total} 条记录
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
+          )}
         </div>
       </CMSLayout>
     </ProtectedRoute>

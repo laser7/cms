@@ -57,4 +57,41 @@ export interface Badge {
   createdAt: string;
   updatedAt: string;
   status: 'active' | 'inactive';
+}
+
+export interface Soundtrack {
+  id: number;
+  title: string;
+  composer: string;
+  category: string;
+  cover: string;
+  url: string;
+  created_at: string;
+}
+
+export interface SoundtrackListResponse {
+  list: Soundtrack[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export interface SoundtrackListParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  category?: string;
+}
+
+export interface ApiResponse<T = unknown> {
+  code: number;
+  data: T;
+  error: string;
+  msg: string;
+}
+
+export interface RawApiResponse<T = unknown> {
+  code: number;
+  data: T;
+  msg: string;
 } 
