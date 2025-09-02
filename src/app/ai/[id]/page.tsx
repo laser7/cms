@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-import { getAIById, updateAI, deleteAI } from '@/lib/ai-api';
+import { getAIById, updateAI, deleteAI, testAI } from '@/lib/ai-api';
 import { AI } from '@/types';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
@@ -20,6 +20,10 @@ export default function AIFeatureDetailPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [testRequest, setTestRequest] = useState('');
+  const [testResponse, setTestResponse] = useState('');
+  const [isTesting, setIsTesting] = useState(false);
+  const [testError, setTestError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   // Fetch AI feature data from API
@@ -139,6 +143,36 @@ export default function AIFeatureDetailPage() {
     } finally {
       setIsDeleting(false);
       setShowDeleteConfirm(false);
+    }
+  };
+
+  const handleTestAI = async () => {
+    if (!aiFeature || !params.id || !testRequest.trim()) return;
+    
+    setIsTesting(true);
+    setTestError(null);
+    setTestResponse('');
+    
+    try {
+      const result = await testAI(Number(params.id), { request: testRequest });
+      
+      if (result.code === 0 && result.data) {
+        setTestResponse(result.data.response);
+        // Update the processing time in the UI
+        if (aiFeature) {
+          setAIFeature({
+            ...aiFeature,
+            processing_time: result.data.processing_time
+          });
+        }
+      } else {
+        setTestError(result.error || '测试失败');
+      }
+    } catch (err) {
+      console.error('Error testing AI:', err);
+      setTestError('测试AI功能时发生错误');
+    } finally {
+      setIsTesting(false);
     }
   };
 
@@ -303,55 +337,67 @@ export default function AIFeatureDetailPage() {
             </div>
           </div>
 
-          {/* Request Card */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-base leading-6 font-medium text-gray-900 mb-4">
-                请求参数
-              </h3>
-              <div className="relative">
-                <textarea
-                  rows={6}
-                  value={formData.request || ''}
-                  onChange={(e) => handleInputChange('request', e.target.value)}
-                  disabled={mode === 'view'}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent resize-none font-mono text-sm ${
-                    mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
-                  }`}
-                  placeholder="输入AI请求参数..."
-                />
-              </div>
-            </div>
-          </div>
 
-          {/* Processing Time */}
-          <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-base leading-6 font-medium text-gray-900 mb-4">
-                处理时间
-              </h3>
-              <div className="text-lg font-mono text-gray-900">
-                {aiFeature?.processing_time || 0}ms
-              </div>
-            </div>
-          </div>
 
-          {/* Response Card */}
+          {/* Test AI Card - Always Visible */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
               <h3 className="text-base leading-6 font-medium text-gray-900 mb-4">
-                返回
+                测试AI功能
               </h3>
-              <textarea
-                rows={8}
-                value={formData.response || ''}
-                onChange={(e) => handleInputChange('response', e.target.value)}
-                disabled={mode === 'view'}
-                className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent resize-none font-mono text-sm ${
-                  mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
-                }`}
-                placeholder="AI响应内容..."
-              />
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    测试请求
+                  </label>
+                  <textarea
+                    rows={4}
+                    value={testRequest}
+                    onChange={(e) => setTestRequest(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent resize-none font-mono text-sm"
+                    placeholder="例如：请分析我的星座运势，生日是1990年1月1日"
+                  />
+                </div>
+                
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={handleTestAI}
+                    disabled={isTesting || !testRequest.trim()}
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
+                  >
+                    {isTesting ? '测试中...' : '发送测试'}
+                  </button>
+                  
+                  {testError && (
+                    <div className="text-sm text-red-600">
+                      错误: {testError}
+                    </div>
+                  )}
+                </div>
+
+                {testResponse && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      AI响应
+                    </label>
+                    <textarea
+                      rows={Math.max(6, testResponse.split('\n').length)}
+                      value={testResponse}
+                      readOnly
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 resize-none font-mono text-sm"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    处理时间
+                  </label>
+                  <div className="text-lg font-mono text-gray-900">
+                    {aiFeature?.processing_time || 0}ms
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 

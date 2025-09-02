@@ -230,43 +230,92 @@ export const updateAI = async (
  * @returns Promise with deletion result
  */
 export const deleteAI = async (id: number): Promise<ApiResponse<string>> => {
+  const endpoint = `/admin/ais/${id}`;
+  
   try {
-    const response = await apiClient<RawApiResponse<string>>(`/admin/ais/${id}`, {
+    const response = await apiClient<RawApiResponse<string>>(endpoint, {
       method: 'DELETE'
     });
     
     if (response.success && response.data) {
-      // Check if the actual API response indicates success
       if (response.data.code === 200 || response.data.code === 0) {
         return {
           code: 0,
-          data: response.data.data || 'AI deleted successfully',
+          data: response.data.data,
           error: '',
           msg: response.data.msg || 'Success'
         };
-      } else {
-        return {
-          code: 1,
-          data: '',
-          error: response.data.msg || 'Failed to delete AI',
-          msg: 'Error'
-        };
-      }
+              } else {
+          return {
+            code: response.data.code,
+            data: '',
+            error: response.data.msg || 'Delete failed',
+            msg: response.data.msg || 'Delete failed'
+          };
+        }
     } else {
       return {
-        code: 1,
+        code: -1,
         data: '',
-        error: response.error || 'Failed to delete AI',
-        msg: 'Error'
+        error: 'Network error',
+        msg: 'Network error'
       };
     }
   } catch (error) {
-    console.error('Error deleting AI:', error);
     return {
-      code: 1,
+      code: -1,
       data: '',
-      error: error instanceof Error ? error.message : 'Unknown error',
-      msg: 'Error'
+      error: 'Request failed',
+      msg: 'Request failed'
+    };
+  }
+};
+
+export const testAI = async (id: number, requestData: { request: string }): Promise<ApiResponse<{
+  processing_time: number;
+  response: string;
+}>> => {
+  const endpoint = `/admin/ais/${id}/test`;
+  
+  try {
+    const response = await apiClient<RawApiResponse<{
+      processing_time: number;
+      response: string;
+    }>>(endpoint, {
+      method: 'POST',
+      body: JSON.stringify(requestData)
+    });
+    
+    if (response.success && response.data) {
+      if (response.data.code === 200 || response.data.code === 0) {
+        return {
+          code: 0,
+          data: response.data.data,
+          error: '',
+          msg: response.data.msg || 'Success'
+        };
+              } else {
+          return {
+            code: response.data.code,
+            data: { processing_time: 0, response: '' },
+            error: response.data.msg || 'Test failed',
+            msg: response.data.msg || 'Test failed'
+          };
+        }
+    } else {
+      return {
+        code: -1,
+        data: { processing_time: 0, response: '' },
+        error: 'Network error',
+        msg: 'Network error'
+      };
+    }
+  } catch (error) {
+    return {
+      code: -1,
+      data: { processing_time: 0, response: '' },
+      error: 'Request failed',
+      msg: 'Request failed'
     };
   }
 };
