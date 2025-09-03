@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { FiEye, FiEdit3, FiPlus, FiSearch, FiTrash2 } from 'react-icons/fi';
+import { FiSearch, FiFilter, FiEye, FiEdit, FiTrash2, FiChevronDown, FiChevronLeft, FiChevronRight, FiPlus } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import CreateMediaModal from '@/components/CreateMediaModal';
-import DeleteMediaModal from '@/components/DeleteMediaModal';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 import Toast from '@/components/Toast';
 import Image from 'next/image';
 import { getMediaList, createMedia, updateMedia, deleteMedia } from '@/lib/media-api';
@@ -342,12 +342,12 @@ export default function MediaPage() {
                               >
                                 <FiEye size={16} />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleEditMedia(item)}
-                                className="text-gray-400 hover:text-gray-600 p-1"
+                                className="text-green-600 hover:text-green-900"
                                 title="编辑"
                               >
-                                <FiEdit3 size={16} />
+                                <FiEdit className="w-4 h-4" />
                               </button>
                               <button 
                                 onClick={() => handleDeleteMedia(item)}
@@ -440,14 +440,16 @@ export default function MediaPage() {
           mode="create"
         />
 
-        <DeleteMediaModal
+        <DeleteConfirmModal
           isOpen={isDeleteModalOpen}
           onClose={() => {
             setIsDeleteModalOpen(false);
             setDeletingMedia(null);
           }}
           onConfirm={handleConfirmDelete}
-          mediaName={deletingMedia?.name || ''}
+          title="删除媒体"
+          message="您确定要删除这个媒体项吗？此操作无法撤销。"
+          itemName={deletingMedia?.name || ''}
         />
 
         {/* Toast Notifications */}
