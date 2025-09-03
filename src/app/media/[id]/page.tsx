@@ -1,98 +1,305 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { FiArrowLeft, FiEdit3, FiSave, FiX, FiTrash2, FiUpload } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import Toast from '@/components/Toast';
 import Image from 'next/image';
-import { FiX } from 'react-icons/fi';
+import { getMediaById, updateMedia, deleteMedia, deleteMediaImage } from '@/lib/media-api';
+import type { MediaItem, UpdateMediaData } from '@/types';
 
-interface MediaItem {
-  id: string;
-  createdAt: string;
-  updatedAt: string;
-  rawApi: string;
-  images: string[];
-}
-
-// Mock data based on the image
-const mockMediaItem: MediaItem = {
-  id: '01',
-  createdAt: '2025.08.11, 12:00',
-  updatedAt: '2025.08.12, 16:00',
-  rawApi: '/api/v1/daily',
-  images: [
-    '/api/placeholder/200/150',
-    '/api/placeholder/200/150',
-    '/api/placeholder/200/150',
-    '/api/placeholder/200/150'
-  ]
-};
-
-export default function MediaDetailPage() {
-  const params = useParams();
-  const searchParams = useSearchParams();
+export default function MediaDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const router = useRouter();
-  const mode = searchParams.get('mode') || 'view'; // 'view' or 'edit'
+  const searchParams = useSearchParams();
+  const mode = searchParams.get('mode') || 'view';
   
-  const [mediaItem, setMediaItem] = useState<MediaItem>(mockMediaItem);
-  const [formData, setFormData] = useState<MediaItem>(mockMediaItem);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
+  // Unwrap the params Promise using React.use()
+  const { id } = React.use(params);
+  
+  const [media, setMedia] = useState<MediaItem | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [isEditing, setIsEditing] = useState(mode === 'edit');
+  const [formData, setFormData] = useState<UpdateMediaData>({
+    name: '',
+    page: '',
+    raw_api: '',
+    images: []
+  });
+  const [isUploading, setIsUploading] = useState(false);
+
+  // Toast state
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+    isVisible: boolean;
+  }>({
+    message: '',
+    type: 'info',
+    isVisible: false
+  });
+
+  const loadMedia = useCallback(async () => {
+    setLoading(true);
+    try {
+      const result = await getMediaById(parseInt(id));
+      
+      console.log('Media detail API response:', result); // Debug log
+      
+      if (result.success && result.data) {
+        setMedia(result.data);
+        
+        // Handle both possible image formats
+        let imageIds: number[] = [];
+        if (result.data.detailedImages && result.data.detailedImages.length > 0) {
+          imageIds = result.data.detailedImages.map(img => img.id);
+        } else if (result.data.images && Array.isArray(result.data.images) && result.data.images.length > 0) {
+          // If images is an array of objects with IDs
+          if (typeof result.data.images[0] === 'object' && 'id' in result.data.images[0]) {
+            imageIds = (result.data.images as any[]).map(img => img.id);
+          }
+        }
+        
+        setFormData({
+          name: result.data.name,
+          page: result.data.page,
+          raw_api: result.data.raw_api || '',
+          images: imageIds
+        });
+      } else {
+        console.error('Failed to load media:', result.error);
+        setToast({
+          message: '加载媒体信息失败',
+          type: 'error',
+          isVisible: true
+        });
+        router.push('/media');
+      }
+    } catch (error) {
+      console.error('Error loading media:', error);
+      setToast({
+        message: '加载媒体信息失败',
+        type: 'error',
+        isVisible: true
+      });
+      router.push('/media');
+    } finally {
+      setLoading(false);
+    }
+  }, [id, router]);
 
   useEffect(() => {
-    // Simulate loading media data
-    const loadMediaItem = async () => {
-      setIsLoading(true);
-      // In a real app, this would be an API call
-      await new Promise(resolve => setTimeout(resolve, 500));
-      setMediaItem(mockMediaItem);
-      setFormData(mockMediaItem);
-      setIsLoading(false);
-    };
+    loadMedia();
+  }, [loadMedia]);
 
-    loadMediaItem();
-  }, [params.id]);
-
-  const handleInputChange = (field: keyof MediaItem, value: string) => {
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [field]: value
+      [name]: value
     }));
   };
 
-  const handleRemoveImage = (index: number) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    
+    setIsUploading(true);
+    try {
+      const file = e.target.files[0];
+      const { uploadImage } = await import('@/lib/media-api');
+      const result = await uploadImage(file);
+      
+      if (result.success && result.data) {
+        // Create a new MediaImage object from the upload result
+        const newImage = {
+          id: result.data.id,
+          filename: result.data.filename,
+          size: result.data.size,
+          type: result.data.type,
+          url: result.data.url,
+          created_at: new Date().toISOString(),
+          media_id: parseInt(id),
+          sort: media?.detailedImages?.length || 0
+        };
+        
+        setMedia(prev => prev ? {
+          ...prev,
+          detailedImages: prev.detailedImages ? [...prev.detailedImages, newImage] : [newImage],
+          images: prev.images ? [...prev.images, result.data.url] : [result.data.url]
+        } : null);
+        
+        setFormData(prev => ({
+          ...prev,
+          images: [...prev.images, result.data.id]
+        }));
+
+        setToast({
+          message: '图片上传成功',
+          type: 'success',
+          isVisible: true
+        });
+      } else {
+        setToast({
+          message: '上传失败: ' + result.error,
+          type: 'error',
+          isVisible: true
+        });
+      }
+    } catch (error) {
+      console.error('Upload error:', error);
+      setToast({
+        message: '上传失败',
+        type: 'error',
+        isVisible: true
+      });
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  const removeImage = async (imageId: number) => {
+    if (!media) return;
+    
+    try {
+      const result = await deleteMediaImage(media.id, imageId);
+      
+      if (result.success) {
+        // Remove the image from both detailedImages and images arrays
+        setMedia(prev => prev ? {
+          ...prev,
+          detailedImages: prev.detailedImages?.filter(img => img.id !== imageId) || [],
+          images: prev.images?.filter((_, index) => {
+            // Find the index of the deleted image in detailedImages
+            const deletedImageIndex = prev.detailedImages?.findIndex(img => img.id === imageId);
+            return deletedImageIndex === undefined || index !== deletedImageIndex;
+          }) || []
+        } : null);
+        
+        // Also remove from formData
+        setFormData(prev => ({
+          ...prev,
+          images: prev.images.filter(id => id !== imageId)
+        }));
+        
+        setToast({
+          message: '图片删除成功',
+          type: 'success',
+          isVisible: true
+        });
+      } else {
+        setToast({
+          message: '删除图片失败: ' + result.error,
+          type: 'error',
+          isVisible: true
+        });
+      }
+    } catch (error) {
+      console.error('Delete image error:', error);
+      setToast({
+        message: '删除图片失败',
+        type: 'error',
+        isVisible: true
+      });
+    }
   };
 
   const handleSave = async () => {
-    setIsSaving(true);
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    if (!formData.name.trim() || !formData.page.trim()) {
+      setToast({
+        message: '请填写所有必填字段',
+        type: 'error',
+        isVisible: true
+      });
+      return;
+    }
     
-    // Update the media item with new data
-    setMediaItem(formData);
-    setIsSaving(false);
+    try {
+      const result = await updateMedia(parseInt(id), formData);
+      
+      if (result.success) {
+        setIsEditing(false);
+        loadMedia(); // Reload to get updated data
+        
+        setToast({
+          message: '保存成功',
+          type: 'success',
+          isVisible: true
+        });
+      } else {
+        setToast({
+          message: '保存失败: ' + result.error,
+          type: 'error',
+          isVisible: true
+        });
+      }
+    } catch (error) {
+      console.error('Error saving media:', error);
+      setToast({
+        message: '保存失败',
+        type: 'error',
+        isVisible: true
+      });
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!confirm('确定要删除这个媒体吗？此操作无法撤销。')) {
+      return;
+    }
     
-    // Switch back to view mode
-    router.push(`/media/${params.id}?mode=view`);
+    try {
+      const result = await deleteMedia(parseInt(id));
+      
+      if (result.success) {
+        setToast({
+          message: '删除成功',
+          type: 'success',
+          isVisible: true
+        });
+        router.push('/media');
+      } else {
+        setToast({
+          message: '删除失败: ' + result.error,
+          type: 'error',
+          isVisible: true
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting media:', error);
+      setToast({
+        message: '删除失败',
+        type: 'error',
+        isVisible: true
+      });
+    }
   };
 
   const handleCancel = () => {
-    // Reset form data to original media item
-    setFormData(mediaItem);
-    // Switch back to view mode
-    router.push(`/media/${params.id}?mode=view`);
+    if (isEditing) {
+      setIsEditing(false);
+      // Reset form data to original values
+      if (media) {
+        let imageIds: number[] = [];
+        if (media.detailedImages && media.detailedImages.length > 0) {
+          imageIds = media.detailedImages.map(img => img.id);
+        } else if (media.images && Array.isArray(media.images) && typeof media.images[0] === 'object' && 'id' in media.images[0]) {
+          imageIds = (media.images as any[]).map(img => img.id);
+        }
+        
+        setFormData({
+          name: media.name,
+          page: media.page,
+          raw_api: media.raw_api || '',
+          images: imageIds
+        });
+      }
+    } else {
+      router.push('/media');
+    }
   };
 
-  const handleEdit = () => {
-    router.push(`/media/${params.id}?mode=edit`);
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
       <ProtectedRoute>
         <CMSLayout>
@@ -104,125 +311,242 @@ export default function MediaDetailPage() {
     );
   }
 
+  if (!media) {
+    return (
+      <ProtectedRoute>
+        <CMSLayout>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">媒体不存在</div>
+          </div>
+        </CMSLayout>
+      </ProtectedRoute>
+    );
+  }
+
   return (
     <ProtectedRoute>
       <CMSLayout>
         <div className="space-y-6">
-          {/* Page header */}
+          {/* Header */}
           <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-xl font-semibold text-gray-900">
-                {mode === 'edit' ? '编辑媒体' : '媒体详情'}
-              </h1>
-              <p className="mt-1 text-xs text-gray-500">
-                {mode === 'edit' ? '编辑媒体文件信息' : '查看媒体文件详情'}
-              </p>
-            </div>
-            {mode === 'view' && (
+            <div className="flex items-center space-x-4">
               <button
-                onClick={handleEdit}
-                className="bg-[#8C7E9C] hover:bg-[#220646] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+                onClick={() => router.push('/media')}
+                className="text-gray-600 hover:text-gray-900"
               >
-                编辑媒体
+                <FiArrowLeft size={20} />
               </button>
-            )}
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  {isEditing ? '编辑媒体' : media.name}
+                </h1>
+                <p className="text-sm text-gray-500">
+                  {isEditing ? '修改媒体信息' : '媒体详情'}
+                </p>
+              </div>
+            </div>
+            
+            <div className="flex items-center space-x-3">
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8C7E9C]"
+                >
+                  <FiEdit3 className="mr-2" size={16} />
+                  编辑
+                </button>
+              )}
+              
+              {isEditing && (
+                <>
+                  <button
+                    onClick={handleSave}
+                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#8C7E9C] hover:bg-[#7A6B8A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8C7E9C]"
+                  >
+                    <FiSave className="mr-2" size={16} />
+                    保存
+                  </button>
+                  <button
+                    onClick={handleCancel}
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
+                  >
+                    <FiX className="mr-2" size={16} />
+                    取消
+                  </button>
+                </>
+              )}
+              
+              <button
+                onClick={handleDelete}
+                className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+              >
+                <FiTrash2 className="mr-2" size={16} />
+                删除
+              </button>
+            </div>
           </div>
 
-          {/* Basic Information Card */}
+          {/* Media Information */}
           <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-base leading-6 font-medium text-gray-900 mb-4">
-                基本信息
-              </h3>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-700">Id:</span>
-                  <span className="text-gray-900">{mediaItem.id}</span>
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h3 className="text-lg font-medium text-gray-900">基本信息</h3>
+            </div>
+            <div className="px-6 py-4 space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    名称 <span className="text-red-500">*</span>
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="name"
+                      value={formData.name}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent"
+                      required
+                    />
+                  ) : (
+                    <p className="text-gray-900">{media.name}</p>
+                  )}
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-700">创建时间:</span>
-                  <span className="text-gray-900">{mediaItem.createdAt}</span>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    页面 <span className="text-red-500">*</span>
+                  </label>
+                  {isEditing ? (
+                    <select
+                      name="page"
+                      value={formData.page}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent"
+                      required
+                    >
+                      <option value="explore">explore</option>
+                      <option value="daily">daily</option>
+                      <option value="Profile">Profile</option>
+                      <option value="other">other</option>
+                    </select>
+                  ) : (
+                    <p className="text-gray-900">{media.page}</p>
+                  )}
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-700">上次更新:</span>
-                  <span className="text-gray-900">{mediaItem.updatedAt}</span>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Raw API
+                  </label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="raw_api"
+                      value={formData.raw_api}
+                      onChange={handleInputChange}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent"
+                      placeholder="例如: /api/v1/daily"
+                    />
+                  ) : (
+                    <p className="text-gray-900">{media.raw_api || '-'}</p>
+                  )}
                 </div>
-                <div className="flex justify-between items-center">
-                  <span className="font-medium text-gray-700">Raw API:</span>
-                  <input
-                    type="text"
-                    value={formData.rawApi}
-                    onChange={(e) => handleInputChange('rawApi', e.target.value)}
-                    disabled={mode === 'view'}
-                                         className={`text-right border-none bg-transparent focus:outline-none focus:ring-0 ${
-                       mode === 'view' ? 'text-gray-900' : 'text-gray-900 border-b border-gray-300 focus:border-[#8C7E9C]'
-                     }`}
-                    placeholder="输入API端点..."
-                  />
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    创建时间
+                  </label>
+                  <p className="text-gray-900">
+                    {new Date(media.created_at).toLocaleString('zh-CN')}
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Image Management Card */}
+          {/* Images Section */}
           <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-base leading-6 font-medium text-gray-900 mb-4">
-                图片管理
-              </h3>
-              <div className="flex flex-wrap gap-4">
-                {formData.images.map((image, index) => (
-                  <div key={index} className="relative">
-                    <div className="w-48 h-32 bg-gray-200 rounded-lg overflow-hidden">
-                      <Image
-                        src={image}
-                        alt={`Image ${index + 1}`}
-                        width={192}
-                        height={128}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    {mode === 'edit' && (
-                      <button
-                        onClick={() => handleRemoveImage(index)}
-                        className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center hover:bg-red-600 transition-colors"
-                      >
-                        <FiX size={14} />
-                      </button>
-                    )}
-                  </div>
-                ))}
-                {mode === 'edit' && (
-                                     <div className="w-48 h-32 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center hover:border-[#8C7E9C] transition-colors cursor-pointer">
-                    <div className="text-center">
-                      <div className="text-2xl text-gray-400 mb-2">+</div>
-                      <div className="text-sm text-gray-500">添加图片</div>
-                    </div>
+            <div className="px-6 py-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium text-gray-900">图片 ({
+                  (media.detailedImages && media.detailedImages.length > 0) ? media.detailedImages.length :
+                  (media.images && Array.isArray(media.images) && typeof media.images[0] === 'object') ? media.images.length : 0
+                })</h3>
+                {isEditing && (
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileUpload}
+                      className="hidden"
+                      id="image-upload"
+                      disabled={isUploading}
+                    />
+                    <label
+                      htmlFor="image-upload"
+                      className={`inline-flex items-center px-3 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white cursor-pointer ${
+                        isUploading 
+                          ? 'bg-gray-400 cursor-not-allowed' 
+                          : 'bg-[#8C7E9C] hover:bg-[#7A6B8A]'
+                      }`}
+                    >
+                      <FiUpload className="mr-2" size={14} />
+                      {isUploading ? '上传中...' : '添加图片'}
+                    </label>
                   </div>
                 )}
               </div>
             </div>
-          </div>
-
-          {/* Action Buttons - Only show in edit mode */}
-          {mode === 'edit' && (
-            <div className="flex justify-end space-x-3">
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 borderborder-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md text-sm font-medium transition-colors"
-              >
-                取消更新
-              </button>
-              <button
-                onClick={handleSave}
-                disabled={isSaving}
-                                  className="px-4 py-2 bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
-              >
-                {isSaving ? '保存中...' : '更新'}
-              </button>
+            
+            <div className="px-6 py-4">
+              {(!media.detailedImages || media.detailedImages.length === 0) && 
+               (!media.images || media.images.length === 0) ? (
+                <div className="text-center py-12 text-gray-500">
+                  暂无图片
+                </div>
+              ) : (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                  {/* Show detailedImages if available, otherwise fall back to images */}
+                  {(media.detailedImages && media.detailedImages.length > 0 ? media.detailedImages : 
+                    (media.images && Array.isArray(media.images) && typeof media.images[0] === 'object' ? media.images : [])
+                  ).map((image: any) => (
+                    <div key={image.id} className="relative group">
+                      <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200">
+                        <Image
+                          src={image.url}
+                          alt={image.filename || `Image ${image.id}`}
+                          fill
+                          className="object-cover object-center"
+                        />
+                      </div>
+                      
+                      {isEditing && (
+                        <button
+                          onClick={() => removeImage(image.id)}
+                          className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                          title="删除图片"
+                        >
+                          <FiTrash2 size={14} />
+                        </button>
+                      )}
+                      
+                      <div className="mt-2 text-xs text-gray-600">
+                        <p className="truncate">{image.filename || `Image ${image.id}`}</p>
+                        {image.size && <p>{Math.round(image.size / 1024)} KB</p>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-          )}
+          </div>
         </div>
+        {/* Toast Notifications */}
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.isVisible}
+          onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+        />
       </CMSLayout>
     </ProtectedRoute>
   );

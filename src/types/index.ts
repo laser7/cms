@@ -132,3 +132,61 @@ export interface CreateAIData {
   page: string;
   prompt: string;
 } 
+
+export interface MediaImage {
+  created_at: string;
+  filename: string;
+  id: number;
+  media_id: number;
+  size: number;
+  sort: number;
+  type: string;
+  url: string;
+}
+
+export interface MediaItem {
+  created_at: string;
+  id: number;
+  images: string[] | null; // For list API (array of URLs)
+  detailedImages?: MediaImage[]; // For detail API (full image objects)
+  name: string;
+  page: string;
+  raw_api?: string;
+  updated_at?: string;
+}
+
+export interface MediaListResponse {
+  list: MediaItem[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export interface MediaListParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  page_type?: string;
+}
+
+export interface CreateMediaData {
+  images: number[];
+  name: string;
+  page: string;
+  raw_api?: string;
+}
+
+export interface UpdateMediaData {
+  images: number[];
+  name: string;
+  page: string;
+  raw_api?: string;
+}
+
+export interface UploadImageResponse {
+  filename: string;
+  id: number;
+  size: number;
+  type: string;
+  url: string;
+} 

@@ -101,7 +101,7 @@ export default function Media({ media, onUploadMedia, onDeleteMedia }: MediaProp
         <div className="px-4 py-5 sm:p-6">
           <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">All Media</h3>
           
-          {media.length === 0 ? (
+          {media?.length === 0 ? (
             <div className="text-center py-12">
               <div className="text-6xl mb-4">🖼️</div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">No media files yet</h3>

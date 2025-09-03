@@ -71,7 +71,7 @@ export const apiClient = async <T = unknown>(
           const errorResponse = responseData as ErrorResponse;
           return {
             success: false,
-            error: errorResponse.msg || '用户名或密码错误',
+            error: responseData.msg || '用户名或密码错误',
           };
         }
         
@@ -91,8 +91,23 @@ export const apiClient = async <T = unknown>(
       const errorResponse = responseData as ErrorResponse;
       return {
         success: false,
-        error: errorResponse.msg || `HTTP ${response.status}: ${response.statusText}`,
+        error: responseData.msg || `HTTP ${response.status}: ${response.statusText}`,
       };
+    }
+
+    // Check if the API response indicates success (code: 0)
+    if (responseData && typeof responseData === 'object' && 'code' in responseData) {
+      if (responseData.code === 0) {
+        return {
+          success: true,
+          data: responseData.data,
+        };
+      } else {
+        return {
+          success: false,
+          error: responseData.msg || 'API request failed',
+        };
+      }
     }
 
     // For logout requests, check the code field to determine success
@@ -106,7 +121,7 @@ export const apiClient = async <T = unknown>(
       } else {
         return {
           success: false,
-          error: logoutResponse.msg || 'Logout failed',
+          error: responseData.msg || 'Logout failed',
         };
       }
     }
