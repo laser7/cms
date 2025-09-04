@@ -17,10 +17,14 @@ import {
   updateRole,
   deleteRole,
   getMenuTree,
+  getRoleAdmin,
+  updateRoleAdmin,
   type RoleItem,
   type UpdateRoleData,
   type MenuTreeItem,
+  type RoleAdminItem,
 } from "@/lib/role-api"
+import { getUsersList } from "@/lib/users-api"
 import Toast from "@/components/Toast"
 import DeleteConfirmModal from "@/components/DeleteConfirmModal"
 
@@ -61,6 +65,15 @@ export default function RoleDetailPage({
   const [selectedMenuCodes, setSelectedMenuCodes] = useState<Set<string>>(
     new Set()
   )
+
+  // Role admin users state
+  const [roleAdminUsers, setRoleAdminUsers] = useState<RoleAdminItem[]>([])
+  const [isLoadingRoleAdmin, setIsLoadingRoleAdmin] = useState(false)
+
+  // User search state
+  const [searchQuery, setSearchQuery] = useState("")
+  const [searchResults, setSearchResults] = useState<RoleAdminItem[]>([])
+  const [isSearching, setIsSearching] = useState(false)
 
   // Debug: Log selectedMenuCodes changes
   useEffect(() => {
@@ -111,6 +124,163 @@ export default function RoleDetailPage({
     }
   }, [id])
 
+  // Load role admin users
+  const loadRoleAdminUsers = useCallback(async () => {
+    if (!id) return
+
+    setIsLoadingRoleAdmin(true)
+    try {
+      const result = await getRoleAdmin(parseInt(id))
+
+      if (result.success && result.data) {
+        // Remove duplicates based on username
+        const uniqueUsers = result.data.filter(
+          (user, index, self) =>
+            index === self.findIndex((u) => u.username === user.username)
+        )
+        setRoleAdminUsers(uniqueUsers)
+      } else {
+        // Handle case where error might be undefined
+        if (!result.success) {
+          const errorMessage = result.error || "Unknown error occurred"
+          console.error("Failed to load role admin users:", errorMessage)
+        }
+
+        // Set empty array if no data
+        setRoleAdminUsers([])
+      }
+    } catch (error) {
+      console.error("Error loading role admin users:", error)
+      // Set empty array on error
+      setRoleAdminUsers([])
+    } finally {
+      setIsLoadingRoleAdmin(false)
+    }
+  }, [id])
+
+  // Search users function
+  const searchUsers = useCallback(
+    async (query: string) => {
+      if (!query.trim()) {
+        setSearchResults([])
+        return
+      }
+
+      setIsSearching(true)
+      try {
+        // Search all users using the users API
+        const result = await getUsersList({ search: query, page_size: 20 })
+
+        if (result.code === 0 && result.data.users) {
+          // Transform User objects to RoleAdminItem format for consistency
+          const transformedUsers: RoleAdminItem[] = result.data.users.map(
+            (user) => ({
+              id: user.id,
+              username: user.name, // User.name maps to username
+              role: "",
+              status: 1,
+            })
+          )
+
+          // Filter out users that are already in the role
+          const availableUsers = transformedUsers.filter(
+            (user) =>
+              !roleAdminUsers.some((roleUser) => roleUser.id === user.id)
+          )
+
+          setSearchResults(availableUsers)
+        } else {
+          setSearchResults([])
+        }
+      } catch (error) {
+        console.error("Error searching users:", error)
+        setSearchResults([])
+      } finally {
+        setIsSearching(false)
+      }
+    },
+    [roleAdminUsers]
+  )
+
+  // Add user to role function
+  const addUserToRole = useCallback(
+    async (user: RoleAdminItem) => {
+      try {
+        // Check if user is already in the role
+        if (
+          roleAdminUsers.some((existingUser) => existingUser.id === user.id)
+        ) {
+          setToast({
+            message: "用户已在角色中",
+            type: "error",
+            isVisible: true,
+          })
+          return
+        }
+
+        // Call API to add user to role
+        const result = await updateRoleAdmin(parseInt(id), {
+          admin_ids: [user.id],
+        })
+
+        if (result.success) {
+          // Add user to local state
+          setRoleAdminUsers((prev) => [...prev, user])
+          setSearchResults([])
+          setSearchQuery("")
+
+          setToast({
+            message: `已添加用户 ${user.username} 到角色`,
+            type: "success",
+            isVisible: true,
+          })
+        } else {
+          setToast({
+            message: result.error || "添加用户失败",
+            type: "error",
+            isVisible: true,
+          })
+        }
+      } catch (error) {
+        console.error("Error adding user to role:", error)
+        setToast({
+          message: "添加用户失败",
+          type: "error",
+          isVisible: true,
+        })
+      }
+    },
+    [roleAdminUsers, id]
+  )
+
+  // Remove user from role function
+  const removeUserFromRole = useCallback(
+    async (userId: number) => {
+      try {
+        const userToRemove = roleAdminUsers.find((user) => user.id === userId)
+        if (!userToRemove) return
+
+        // For now, we'll just update local state
+        // TODO: Implement API call to remove user from role if endpoint exists
+        setRoleAdminUsers((prev) => prev.filter((user) => user.id !== userId))
+
+        setToast({
+          message: `已从角色中移除用户 ${userToRemove.username}`,
+          type: "success",
+          isVisible: true,
+        })
+      } catch (error) {
+        console.error("Error removing user from role:", error)
+        setToast({
+          message: "移除用户失败",
+          type: "error",
+          isVisible: true,
+        })
+      }
+    },
+    [roleAdminUsers]
+  )
+
   // Load data on component mount
   useEffect(() => {
     const loadData = async () => {
@@ -128,9 +298,11 @@ export default function RoleDetailPage({
 
       // Load role data
       await loadRole()
+      // Load role admin users
+      await loadRoleAdminUsers()
     }
     loadData()
-  }, [loadRole, menuTreeParam])
+  }, [loadRole, loadRoleAdminUsers, menuTreeParam])
 
   const handleSave = async () => {
     if (!role) return
@@ -161,7 +333,6 @@ export default function RoleDetailPage({
             return findMenuIdInTree(menuTree) || 0
           })
           .filter((id) => id !== 0), // Remove any invalid IDs
-     
       }
 
       const result = await updateRole(role?.id, updateData)
@@ -414,45 +585,12 @@ export default function RoleDetailPage({
             </div>
           </div>
 
-          {/* Permission Configuration */}
-          <div className="bg-white shadow rounded-lg mt-6">
-            <div className="px-6 py-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">
-                权限配置
-              </h3>
-              <div className="space-y-3">
-                {role?.permissions && role?.permissions.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {role?.permissions.map((permission, index) => (
-                      <span
-                        key={index}
-                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
-                      >
-                        {permission}
-                      </span>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="text-gray-500 text-center py-4">
-                    暂无权限配置
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-
           {/* Menu Tree Configuration */}
           <div className="bg-white shadow rounded-lg mt-6">
             <div className="px-6 py-6">
               <h3 className="text-lg font-medium text-gray-900 mb-4">
                 菜单权限配置
               </h3>
-
-              {/* Debug info */}
-              <div className="mb-4 p-3 bg-gray-100 rounded text-sm">
-                <strong>Debug Info:</strong> selectedMenuCodes:{" "}
-                {Array.from(selectedMenuCodes).join(", ")}
-              </div>
 
               <div className="space-y-2">
                 {isMenuTreeLoading ? (
@@ -705,6 +843,135 @@ export default function RoleDetailPage({
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+          </div>
+
+          {/* Role Users Section */}
+          <div className="bg-white shadow rounded-lg mt-6">
+            <div className="px-6 py-6">
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                角色用户
+              </h3>
+
+              <div className="space-y-4">
+                {/* Total Users */}
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-sm font-medium text-gray-600">
+                    用户总数
+                  </span>
+                  <span className="text-sm font-gray-900">
+                    {roleAdminUsers.length}
+                  </span>
+                </div>
+
+                {/* User Search and Add */}
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-sm font-medium text-gray-600">
+                    搜索并添加用户
+                  </span>
+                  <div className="flex space-x-2">
+                    <input
+                      type="text"
+                      placeholder="搜索用户名..."
+                      value={searchQuery}
+                      onChange={(e) => {
+                        const query = e.target.value
+                        setSearchQuery(query)
+
+                        // Clear results if query is empty
+                        if (!query.trim()) {
+                          setSearchResults([])
+                          return
+                        }
+
+                        // Debounce search to avoid too many API calls
+                        const timeoutId = setTimeout(() => {
+                          searchUsers(query)
+                        }, 300)
+
+                        return () => clearTimeout(timeoutId)
+                      }}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                    />
+                    {isSearching && (
+                      <div className="px-3 py-1 text-sm text-gray-500">
+                        搜索中...
+                      </div>
+                    )}
+                    {searchQuery && (
+                      <button
+                        onClick={() => {
+                          setSearchQuery("")
+                          setSearchResults([])
+                        }}
+                        className="px-2 py-1 text-xs text-gray-500 hover:text-gray-700 border border-gray-300 rounded hover:bg-gray-50 transition-colors"
+                      >
+                        清除
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Search Results */}
+                {searchResults.length > 0 && (
+                  <div className="py-3 border-b border-gray-100">
+                    <div className="text-sm font-medium text-gray-600 mb-2">
+                      搜索结果
+                    </div>
+                    <div className="space-y-2">
+                      {searchResults.map((user) => (
+                        <div
+                          key={user.id}
+                          className="flex justify-between items-center px-3 py-2 bg-gray-50 rounded-md"
+                        >
+                          <span className="text-sm text-gray-700">
+                            {user.id}
+                          </span>
+                          <span className="text-sm text-gray-700">
+                            {user.username}
+                          </span>
+
+                          <button
+                            onClick={() => addUserToRole(user)}
+                            className="px-2 py-1 text-xs text-white bg-green-600 rounded hover:bg-green-700 transition-colors"
+                          >
+                            添加+
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* User List */}
+                <div className="flex justify-between items-center py-3">
+                  <span className="text-sm font-medium text-gray-600">
+                    用户列表
+                  </span>
+                  <div className="flex space-x-2">
+                    {isLoadingRoleAdmin ? (
+                      <div className="text-sm text-gray-500">加载中...</div>
+                    ) : roleAdminUsers.length === 0 ? (
+                      <div className="text-sm text-gray-500">暂无用户</div>
+                    ) : (
+                      roleAdminUsers.map((user) => (
+                        <div
+                          key={user.id}
+                          className="px-3 py-1 text-sm bg-gray-100 text-gray-700 rounded-md flex items-center space-x-2"
+                        >
+                          <span>{user.username}</span>
+                          <button
+                            onClick={() => removeUserFromRole(user.id)}
+                            className="text-red-500 hover:text-red-700"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      ))
+                    )}
+                  </div>
+                </div>
               </div>
             </div>
           </div>

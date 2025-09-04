@@ -57,11 +57,25 @@ export interface MenuTreeItem {
   icon: string
   children: MenuTreeItem[] | null
 }
-
+export interface RoleAdminItem {
+  id: number
+  role: string
+  status: number
+  username: string
+}
 export interface MenuTreeResponse {
   data: MenuTreeItem[]
 }
+export interface UpdateRoleAdminItem {
+  admin_ids: number[]
+}
 
+export interface UpdateRoleAdminResponse {
+  code: number
+  data: string
+  error: string
+  msg: string
+}
 // Get role list
 export const getRoleList = async (params: RoleListParams = {}) => {
   const searchParams = new URLSearchParams()
@@ -114,5 +128,20 @@ export const updateRole = async (id: number, data: UpdateRoleData) => {
 export const deleteRole = async (id: number) => {
   return apiClient<string>(`/admin/roles/${id}`, {
     method: "DELETE",
+  })
+}
+export const getRoleAdmin = async (id: number) => {
+  return apiClient<RoleAdminItem[]>(`/admin/roles/${id}/admins`, {
+    method: "GET",
+  })
+}
+
+export const updateRoleAdmin = async (
+  id: number,
+  data: UpdateRoleAdminItem
+) => {
+  return apiClient<UpdateRoleAdminResponse>(`/admin/roles/${id}/users`, {
+    method: "POST",
+    body: JSON.stringify(data),
   })
 }
