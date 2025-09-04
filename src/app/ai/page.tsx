@@ -126,7 +126,7 @@ export default function AIPage() {
   return (
     <ProtectedRoute>
       <CMSLayout>
-      <div className="space-y-4">
+        <div className="space-y-4">
           {/* Page header */}
           <div className="flex flex-row gap-3">
             <h1 className="text-xl font-bold text-gray-900">AI 列表</h1>
@@ -159,7 +159,6 @@ export default function AIPage() {
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="rounded border-gray-300 text-[#8C7E9C] focus:ring-[#8C7E9C]"
                     />
-             
                   </div>
                   <button className="text-sm text-gray-600 hover:text-gray-900">
                     选择列
@@ -168,10 +167,13 @@ export default function AIPage() {
                     ↕️
                   </button>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="relative">
-                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                    <FiSearch
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      size={16}
+                    />
                     <input
                       type="text"
                       placeholder="搜索列表..."
@@ -197,14 +199,14 @@ export default function AIPage() {
                     <option value="article">article</option>
                     <option value="dream">dream</option>
                   </select>
-                  <button 
+                  <button
                     onClick={fetchAIFeatures}
                     className="text-gray-600 hover:text-gray-900 p-2"
                     title="刷新"
                   >
                     <FiRefreshCw size={20} />
                   </button>
-                  <button 
+                  <button
                     onClick={() => setIsCreateModalOpen(true)}
                     className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
                   >
@@ -245,19 +247,28 @@ export default function AIPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {loading ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                      <td
+                        colSpan={6}
+                        className="px-6 py-4 text-center text-gray-500"
+                      >
                         Loading...
                       </td>
                     </tr>
                   ) : error ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-4 text-center text-red-500">
+                      <td
+                        colSpan={6}
+                        className="px-6 py-4 text-center text-red-500"
+                      >
                         {error}
                       </td>
                     </tr>
                   ) : filteredAIFeatures.length === 0 ? (
                     <tr>
-                      <td colSpan={6} className="px-6 py-4 text-center text-gray-500">
+                      <td
+                        colSpan={6}
+                        className="px-6 py-4 text-center text-gray-500"
+                      >
                         No AI features found.
                       </td>
                     </tr>
@@ -276,32 +287,48 @@ export default function AIPage() {
                         <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
                           {feature.prompt}
                         </td>
-                                                 <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                           {feature.created_at}
-                         </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {feature.created_at}
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
-                            <button 
+                            <button
                               onClick={() => confirmDeleteAI(feature.id)}
                               className="text-gray-400 hover:text-gray-600 p-1"
                               disabled={deleteLoading === feature.id}
                             >
                               {deleteLoading === feature.id ? (
-                                <svg className="animate-spin h-4 w-4 text-gray-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                <svg
+                                  className="animate-spin h-4 w-4 text-gray-400"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  ></circle>
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  ></path>
                                 </svg>
                               ) : (
                                 <FiTrash2 size={16} />
                               )}
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleViewAI(feature.id)}
                               className="text-gray-400 hover:text-gray-600 p-1"
                             >
                               <FiEye size={16} />
                             </button>
-                            <button 
+                            <button
                               onClick={() => handleEditAI(feature.id)}
                               className="text-gray-400 hover:text-gray-600 p-1"
                             >
@@ -321,7 +348,7 @@ export default function AIPage() {
           <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
               <div className="flex items-center space-x-2">
-                <button 
+                <button
                   onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
                   disabled={currentPage === 1}
                   className="text-gray-400 hover:text-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed"
@@ -331,7 +358,7 @@ export default function AIPage() {
                 <span className="text-sm text-gray-700">
                   第 {currentPage} 页，共 {Math.ceil(total / pageSize)} 页
                 </span>
-                <button 
+                <button
                   onClick={() => setCurrentPage(currentPage + 1)}
                   disabled={currentPage >= Math.ceil(total / pageSize)}
                   className="text-gray-400 hover:text-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed"
@@ -341,11 +368,11 @@ export default function AIPage() {
               </div>
               <div className="flex items-center space-x-2">
                 <span className="text-sm text-gray-700">显示</span>
-                <select 
+                <select
                   value={pageSize}
                   onChange={(e) => {
-                    setPageSize(Number(e.target.value));
-                    setCurrentPage(1);
+                    setPageSize(Number(e.target.value))
+                    setCurrentPage(1)
                   }}
                   className="text-sm border border-gray-300 rounded px-2 py-1"
                 >
@@ -364,8 +391,8 @@ export default function AIPage() {
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           onSuccess={() => {
-            setIsCreateModalOpen(false);
-            fetchAIFeatures();
+            setIsCreateModalOpen(false)
+            fetchAIFeatures()
           }}
         />
 
@@ -374,7 +401,7 @@ export default function AIPage() {
           message={toast.message}
           type={toast.type}
           isVisible={toast.isVisible}
-          onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+          onClose={() => setToast((prev) => ({ ...prev, isVisible: false }))}
         />
 
         {/* Delete Confirmation Modal */}
@@ -383,15 +410,15 @@ export default function AIPage() {
           onClose={() => setShowDeleteConfirm(null)}
           onConfirm={() => {
             if (showDeleteConfirm) {
-              handleDeleteAI(showDeleteConfirm);
-              setShowDeleteConfirm(null);
+              handleDeleteAI(showDeleteConfirm)
+              setShowDeleteConfirm(null)
             }
           }}
           title="确认删除"
           message="确定要删除这个AI功能吗？此操作无法撤销。"
-          isLoading={deleteLoading !== null}
+          itemName="AI功能"
         />
       </CMSLayout>
     </ProtectedRoute>
-  );
+  )
 }

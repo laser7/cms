@@ -1,209 +1,202 @@
 'use client';
 
-import React, { useState } from 'react';
-import CMSLayout from '@/components/CMSLayout';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import { FiSearch, FiFilter, FiEye, FiEdit, FiTrash2, FiChevronDown, FiChevronLeft, FiChevronRight, FiPlus } from 'react-icons/fi';
-import Link from 'next/link';
-
-interface Role {
-  id: string;
-  name: string;
-  description: string;
-  permissions: string[];
-  userCount: number;
-  creationTime: string;
-}
-
-interface Permission {
-  id: string;
-  name: string;
-  category: string;
-}
-
-const permissions: Permission[] = [
-  { id: 'read_posts', name: '查看文章', category: '内容管理' },
-  { id: 'write_posts', name: '创建文章', category: '内容管理' },
-  { id: 'publish_posts', name: '发布文章', category: '内容管理' },
-  { id: 'delete_posts', name: '删除文章', category: '内容管理' },
-  { id: 'manage_media', name: '管理媒体', category: '媒体管理' },
-  { id: 'manage_users', name: '管理用户', category: '用户管理' },
-  { id: 'manage_roles', name: '管理角色', category: '用户管理' },
-  { id: 'view_analytics', name: '查看统计', category: '数据分析' },
-  { id: 'manage_settings', name: '管理设置', category: '系统管理' },
-  { id: 'access_ai', name: 'AI功能', category: 'AI功能' },
-  { id: 'manage_conversations', name: '管理会话', category: '会话管理' },
-  { id: 'export_data', name: '导出数据', category: '系统管理' }
-];
-
-const roles: Role[] = [
-  {
-    id: '01',
-    name: '管理员',
-    description: '拥有所有权限的超级管理员',
-    permissions: ['view_user', 'edit_content', 'view_settings', 'view_media', 'delete_content', 'view_dashboard'],
-    userCount: 2,
-    creationTime: '2025.08.12, 12:30'
-  },
-  {
-    id: '02',
-    name: '总编辑',
-    description: '负责内容编辑和审核',
-    permissions: ['view_user', 'edit_content', 'view_media', 'delete_content'],
-    userCount: 3,
-    creationTime: '2025.08.12, 12:30'
-  },
-  {
-    id: '03',
-    name: '开发者',
-    description: '系统开发和维护',
-    permissions: ['view_user', 'edit_content', 'view_settings', 'view_dashboard'],
-    userCount: 4,
-    creationTime: '2025.08.12, 12:30'
-  },
-  {
-    id: '04',
-    name: '用户',
-    description: '普通用户权限',
-    permissions: ['view_content', 'view_media'],
-    userCount: 15,
-    creationTime: '2025.08.12, 12:30'
-  },
-  {
-    id: '05',
-    name: '内容审核者',
-    description: '负责内容审核',
-    permissions: ['view_content', 'edit_content', 'delete_content'],
-    userCount: 2,
-    creationTime: '2025.08.12, 12:30'
-  },
-  {
-    id: '06',
-    name: '翻译人员',
-    description: '负责内容翻译',
-    permissions: ['view_content', 'edit_content'],
-    userCount: 3,
-    creationTime: '2025.08.12, 12:30'
-  },
-  {
-    id: '07',
-    name: '数据查看者',
-    description: '只能查看数据',
-    permissions: ['view_dashboard', 'view_content'],
-    userCount: 5,
-    creationTime: '2025.08.12, 12:30'
-  },
-  {
-    id: '08',
-    name: 'SEO专员',
-    description: '负责SEO优化',
-    permissions: ['view_content', 'edit_content', 'view_settings'],
-    userCount: 2,
-    creationTime: '2025.08.12, 12:30'
-  },
-  {
-    id: '09',
-    name: '访客',
-    description: '只读访问权限',
-    permissions: ['view_content'],
-    userCount: 8,
-    creationTime: '2025.08.12, 12:30'
-  },
-  {
-    id: '10',
-    name: '超级管理员',
-    description: '系统最高权限',
-    permissions: ['view_user', 'edit_content', 'view_settings', 'view_media', 'delete_content', 'view_dashboard', 'manage_users', 'manage_roles'],
-    userCount: 1,
-    creationTime: '2025.08.12, 12:30'
-  }
-];
+import React, { useState, useEffect, useCallback } from "react"
+import { useRouter } from "next/navigation"
+import {
+  FiTrash2,
+  FiEye,
+  FiEdit,
+  FiPlus,
+  FiSearch,
+  FiRefreshCw,
+  FiChevronLeft,
+  FiChevronRight,
+} from "react-icons/fi"
+import CMSLayout from "@/components/CMSLayout"
+import ProtectedRoute from "@/components/ProtectedRoute"
+import {
+  getRoleList,
+  deleteRole,
+  getMenuTree,
+  type RoleItem,
+  type RoleListParams,
+  type MenuTreeItem,
+} from "@/lib/role-api"
+import CreateRoleModal from "@/components/CreateRoleModal"
+import Toast from "@/components/Toast"
+import DeleteConfirmModal from "@/components/DeleteConfirmModal"
 
 export default function RoleManagementPage() {
-  const [selectedItems, setSelectedItems] = useState<string[]>([]);
-  const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [showNewRoleModal, setShowNewRoleModal] = useState(false);
-  const [newRole, setNewRole] = useState({ name: '', description: '', permissions: [] as string[] });
+  const router = useRouter()
+  const [roles, setRoles] = useState<RoleItem[]>([])
+  const [selectedItems, setSelectedItems] = useState<number[]>([])
+  const [searchTerm, setSearchTerm] = useState("")
+  const [currentPage, setCurrentPage] = useState(1)
+  const [itemsPerPage, setItemsPerPage] = useState(10)
+  const [totalItems, setTotalItems] = useState(0)
+  const [isLoading, setIsLoading] = useState(false)
+  const [toast, setToast] = useState<{
+    message: string
+    type: "success" | "error" | "info"
+    isVisible: boolean
+  }>({
+    message: "",
+    type: "info",
+    isVisible: false,
+  })
 
-  const filteredItems = roles.filter(item =>
-    item.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    item.description.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Menu tree state
+  const [menuTree, setMenuTree] = useState<MenuTreeItem[]>([])
+  const [isMenuTreeLoading, setIsMenuTreeLoading] = useState(false)
 
-  const totalPages = Math.ceil(filteredItems.length / itemsPerPage);
-  const startIndex = (currentPage - 1) * itemsPerPage;
-  const endIndex = startIndex + itemsPerPage;
-  const currentItems = filteredItems.slice(startIndex, endIndex);
+  // Delete modal state
+  const [roleToDelete, setRoleToDelete] = useState<RoleItem | undefined>(
+    undefined
+  )
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+
+  // Create Role Modal state
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
+
+  // Load role data
+  const loadRoleData = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const params: RoleListParams = {
+        page: currentPage,
+        page_size: itemsPerPage,
+        search: searchTerm || undefined,
+      }
+
+      const result = await getRoleList(params)
+
+      if (result.success && result.data) {
+        setRoles(result.data.list)
+        setTotalItems(result.data.total)
+      } else {
+        setToast({
+          message: result.error || "获取角色列表失败",
+          type: "error",
+          isVisible: true,
+        })
+      }
+    } catch (error) {
+      console.error("Error loading role data:", error)
+      setToast({
+        message: "加载角色数据失败",
+        type: "error",
+        isVisible: true,
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [currentPage, itemsPerPage, searchTerm])
+
+  // Load menu tree data
+  const loadMenuTree = useCallback(async () => {
+    setIsMenuTreeLoading(true)
+    try {
+      const result = await getMenuTree()
+
+      if (result.success && result.data) {
+        setMenuTree(result.data)
+      } else {
+        console.error("Failed to load menu tree:", result.error)
+      }
+    } catch (error) {
+      console.error("Error loading menu tree:", error)
+    } finally {
+      setIsMenuTreeLoading(false)
+    }
+  }, [])
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      // Load menu tree first, then roles
+      await loadMenuTree()
+      await loadRoleData()
+    }
+    loadData()
+  }, [loadMenuTree, loadRoleData])
+
+  const totalPages = Math.ceil(totalItems / itemsPerPage)
 
   const handleSelectAll = (checked: boolean) => {
     if (checked) {
-      setSelectedItems(currentItems.map(item => item.id));
+      setSelectedItems(roles?.map((item) => item.id))
     } else {
-      setSelectedItems([]);
+      setSelectedItems([])
     }
-  };
+  }
 
-  const handleSelectItem = (itemId: string, checked: boolean) => {
+  const handleSelectItem = (itemId: number, checked: boolean) => {
     if (checked) {
-      setSelectedItems(prev => [...prev, itemId]);
+      setSelectedItems((prev) => [...prev, itemId])
     } else {
-      setSelectedItems(prev => prev.filter(id => id !== itemId));
+      setSelectedItems((prev) => prev.filter((id) => id !== itemId))
     }
-  };
+  }
 
-  const handleViewDetails = (role: Role) => {
-    // Navigate to view page
-    window.location.href = `/permissions/roles/${role.id}?mode=view`;
-  };
+  const handleViewRole = (id: number) => {
+    // Pass menu tree data to detail page
+    const menuTreeData = encodeURIComponent(JSON.stringify(menuTree))
+    router.push(`/permissions/roles/${id}?mode=view&menuTree=${menuTreeData}`)
+  }
 
-  const handleEdit = (role: Role) => {
-    // Navigate to edit page
-    window.location.href = `/permissions/roles/${role.id}?mode=edit`;
-  };
+  const handleEditRole = (id: number) => {
+    // Pass menu tree data to detail page
+    const menuTreeData = encodeURIComponent(JSON.stringify(menuTree))
+    router.push(`/permissions/roles/${id}?mode=edit&menuTree=${menuTreeData}`)
+  }
 
-  const handleDelete = (role: Role) => {
-    if (confirm(`确定要删除角色 "${role.name}" 吗？`)) {
-      // In a real app, this would call an API to delete the role
-      console.log('Deleting role:', role);
-      // Remove from local state for demo
-      const updatedRoles = roles.filter(r => r.id !== role.id);
-      // In real app, you would update the state here
-      alert('删除成功！');
+  const handleDelete = (role: RoleItem) => {
+    setRoleToDelete(role)
+    setIsDeleteModalOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!roleToDelete) return
+
+    try {
+      const result = await deleteRole(roleToDelete.id)
+
+      if (result.success) {
+        setToast({
+          message: "删除成功！",
+          type: "success",
+          isVisible: true,
+        })
+        // Reload data
+        loadRoleData()
+      } else {
+        setToast({
+          message: result.error || "删除失败",
+          type: "error",
+          isVisible: true,
+        })
+      }
+    } catch (error) {
+      console.error("Error deleting role:", error)
+      setToast({
+        message: "删除失败",
+        type: "error",
+        isVisible: true,
+      })
+    } finally {
+      setRoleToDelete(undefined)
+      setIsDeleteModalOpen(false)
     }
-  };
+  }
 
-  const handlePermissionToggle = (permissionId: string) => {
-    setNewRole(prev => ({
-      ...prev,
-      permissions: prev.permissions.includes(permissionId)
-        ? prev.permissions.filter(p => p !== permissionId)
-        : [...prev.permissions, permissionId]
-    }));
-  };
+  const handleSearch = () => {
+    setCurrentPage(1) // Reset to first page when searching
+    loadRoleData()
+  }
 
-  const handleCreateRole = () => {
-    if (newRole.name && newRole.description) {
-      // In a real app, this would save to the backend
-      console.log('Creating new role:', newRole);
-      setNewRole({ name: '', description: '', permissions: [] });
-      setShowNewRoleModal(false);
-    }
-  };
-
-  const getPermissionName = (permissionId: string) => {
-    const permission = permissions.find(p => p.id === permissionId);
-    return permission ? permission.name : permissionId;
-  };
-
-  const groupedPermissions = permissions.reduce((acc, permission) => {
-    if (!acc[permission.category]) {
-      acc[permission.category] = [];
-    }
-    acc[permission.category].push(permission);
-    return acc;
-  }, {} as Record<string, Permission[]>);
+  const handleCreateNew = () => {
+    setIsCreateModalOpen(true)
+  }
 
   return (
     <ProtectedRoute>
@@ -219,40 +212,31 @@ export default function RoleManagementPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <select className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500">
-                    <option>选择列</option>
-                  </select>
-                  <FiChevronDown className="absolute right-2 top-3 h-4 w-4 text-gray-400 pointer-events-none" />
-                </div>
-                
-                <button className="p-2 text-gray-400 hover:text-gray-600">
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4" />
-                  </svg>
-                </button>
-
-                <div className="relative">
                   <FiSearch className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Q 搜索列表..."
+                    placeholder="搜索角色..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
+                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                     className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-64"
                   />
                 </div>
 
-                <button className="p-2 text-gray-400 hover:text-gray-600">
-                  <FiFilter className="w-4 h-4" />
+                <button
+                  onClick={handleSearch}
+                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium"
+                >
+                  搜索
                 </button>
               </div>
 
-              <button 
-                onClick={() => setShowNewRoleModal(true)}
-                className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium hover:from-pink-600 hover:to-purple-700 flex items-center space-x-2"
+              <button
+                onClick={handleCreateNew}
+                className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
               >
                 <FiPlus className="w-4 h-4" />
-                <span>新增</span>
+                新增
               </button>
             </div>
 
@@ -264,7 +248,10 @@ export default function RoleManagementPage() {
                     <th className="px-6 py-3 text-left">
                       <input
                         type="checkbox"
-                        checked={selectedItems.length === currentItems.length && currentItems.length > 0}
+                        checked={
+                          selectedItems.length === roles?.length &&
+                          roles?.length > 0
+                        }
                         onChange={(e) => handleSelectAll(e.target.checked)}
                         className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                       />
@@ -274,6 +261,9 @@ export default function RoleManagementPage() {
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       名称
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      描述
                     </th>
                     <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       权限
@@ -287,64 +277,96 @@ export default function RoleManagementPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {currentItems.map((role) => (
-                    <tr key={role.id} className="hover:bg-gray-50">
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <input
-                          type="checkbox"
-                          checked={selectedItems.includes(role.id)}
-                          onChange={(e) => handleSelectItem(role.id, e.target.checked)}
-                          className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                        />
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {role.id}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {role.name}
-                      </td>
-                      <td className="px-6 py-4 text-sm text-gray-900">
-                        <div className="flex flex-wrap gap-1">
-                          {role.permissions.map((permission) => (
-                            <span
-                              key={permission}
-                              className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
-                            >
-                              {permission}
-                            </span>
-                          ))}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        {role.creationTime}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <div className="flex items-center space-x-2">
-                          <button
-                            onClick={() => handleDelete(role)}
-                            className="text-red-600 hover:text-red-900"
-                            title="删除"
-                          >
-                            <FiTrash2 className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleViewDetails(role)}
-                            className="text-blue-600 hover:text-blue-900"
-                            title="查看"
-                          >
-                            <FiEye className="w-4 h-4" />
-                          </button>
-                          <button
-                            onClick={() => handleEdit(role)}
-                            className="text-green-600 hover:text-green-900"
-                            title="编辑"
-                          >
-                            <FiEdit className="w-4 h-4" />
-                          </button>
-                        </div>
+                  {isLoading ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-6 py-4 text-center text-gray-500"
+                      >
+                        加载中...
                       </td>
                     </tr>
-                  ))}
+                  ) : roles?.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={7}
+                        className="px-6 py-4 text-center text-gray-500"
+                      >
+                        暂无角色数据
+                      </td>
+                    </tr>
+                  ) : (
+                    roles?.map((role) => (
+                      <tr key={role?.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            checked={selectedItems.includes(role?.id)}
+                            onChange={(e) =>
+                              handleSelectItem(role?.id, e.target.checked)
+                            }
+                            className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                          />
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {role?.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {role?.name}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          {role?.description}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900">
+                          <div className="flex flex-wrap gap-1">
+                            {role?.permissions &&
+                            role.permissions.length > 0 ? (
+                              role.permissions.map((permission, index) => (
+                                <span
+                                  key={permission + index}
+                                  className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800"
+                                >
+                                  {permission}
+                                </span>
+                              ))
+                            ) : (
+                              <span className="text-gray-400 text-sm">
+                                暂无权限
+                              </span>
+                            )}
+                          </div>
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {new Date(role?.created_at).toLocaleString("zh-CN")}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleDelete(role)}
+                              className="text-red-600 hover:text-red-900"
+                              title="删除"
+                            >
+                              <FiTrash2 className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleViewRole(role?.id)}
+                              className="text-blue-600 hover:text-blue-900"
+                              title="查看"
+                            >
+                              <FiEye className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={() => handleEditRole(role?.id)}
+                              className="text-green-600 hover:text-green-900"
+                              title="编辑"
+                            >
+                              <FiEdit className="w-4 h-4" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
@@ -362,34 +384,39 @@ export default function RoleManagementPage() {
                   <option value={20}>20行</option>
                   <option value={50}>50行</option>
                 </select>
+                <span className="text-sm text-gray-700">
+                  共 {totalItems} 条记录
+                </span>
               </div>
 
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
                   disabled={currentPage === 1}
                   className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                 >
                   <FiChevronLeft className="w-4 h-4" />
                 </button>
-                
+
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = i + 1;
+                  const pageNum = i + 1
                   return (
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
                       className={`px-3 py-1 text-sm rounded ${
                         currentPage === pageNum
-                          ? 'bg-pink-500 text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
+                          ? "bg-pink-500 text-white"
+                          : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
                       {pageNum}
                     </button>
-                  );
+                  )
                 })}
-                
+
                 {totalPages > 5 && (
                   <>
                     <span className="text-gray-500">...</span>
@@ -397,17 +424,19 @@ export default function RoleManagementPage() {
                       onClick={() => setCurrentPage(totalPages)}
                       className={`px-3 py-1 text-sm rounded ${
                         currentPage === totalPages
-                          ? 'bg-pink-500 text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
+                          ? "bg-pink-500 text-white"
+                          : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
                       {totalPages}
                     </button>
                   </>
                 )}
-                
+
                 <button
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
                   disabled={currentPage === totalPages}
                   className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                 >
@@ -416,88 +445,37 @@ export default function RoleManagementPage() {
               </div>
             </div>
           </div>
-
-
-
-          {/* New Role Modal */}
-          {showNewRoleModal && (
-            <div className="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full z-50">
-              <div className="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
-                <div className="mt-3">
-                  <h3 className="text-lg font-medium text-gray-900 mb-4">创建新角色</h3>
-                  
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        角色名称
-                      </label>
-                      <input
-                        type="text"
-                        value={newRole.name}
-                        onChange={(e) => setNewRole(prev => ({ ...prev, name: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        placeholder="输入角色名称"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">
-                        描述
-                      </label>
-                      <textarea
-                        value={newRole.description}
-                        onChange={(e) => setNewRole(prev => ({ ...prev, description: e.target.value }))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
-                        rows={3}
-                        placeholder="输入角色描述"
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-2">
-                        权限
-                      </label>
-                      <div className="max-h-40 overflow-y-auto space-y-2">
-                        {Object.entries(groupedPermissions).map(([category, perms]) => (
-                          <div key={category}>
-                            <h5 className="text-xs font-medium text-gray-600 mb-1">{category}</h5>
-                            {perms.map((permission) => (
-                              <label key={permission.id} className="flex items-center ml-2">
-                                <input
-                                  type="checkbox"
-                                  checked={newRole.permissions.includes(permission.id)}
-                                  onChange={() => handlePermissionToggle(permission.id)}
-                                  className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                                />
-                                <span className="ml-2 text-sm text-gray-700">{permission.name}</span>
-                              </label>
-                            ))}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="flex justify-end space-x-3 mt-6">
-                    <button
-                      onClick={() => setShowNewRoleModal(false)}
-                      className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
-                    >
-                      取消
-                    </button>
-                    <button
-                      onClick={handleCreateRole}
-                      className="px-4 py-2 text-sm font-medium text-white bg-purple-600 hover:bg-purple-700 rounded-md"
-                    >
-                      创建
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
+
+        {/* Toast notification */}
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.isVisible}
+          onClose={() => setToast((prev) => ({ ...prev, isVisible: false }))}
+        />
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleConfirmDelete}
+          title="删除角色"
+          message="确定要删除这个角色吗？此操作无法撤销。"
+          itemName={roleToDelete?.name || ""}
+        />
+
+        {/* Create Role Modal */}
+        <CreateRoleModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={() => {
+            setIsCreateModalOpen(false)
+            loadRoleData()
+          }}
+          menuTree={menuTree}
+        />
       </CMSLayout>
     </ProtectedRoute>
-  );
+  )
 }

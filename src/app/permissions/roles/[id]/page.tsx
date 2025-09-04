@@ -1,116 +1,298 @@
 'use client';
 
-import React, { useState } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { FiSearch, FiChevronLeft } from 'react-icons/fi';
-import CMSLayout from '@/components/CMSLayout';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import React, { useState, useEffect, useCallback } from "react"
+import Link from "next/link"
+import { useSearchParams } from "next/navigation"
+import {
+  FiSearch,
+  FiChevronLeft,
+  FiSave,
+  FiEdit,
+  FiTrash2,
+} from "react-icons/fi"
+import CMSLayout from "@/components/CMSLayout"
+import ProtectedRoute from "@/components/ProtectedRoute"
+import {
+  getRoleById,
+  updateRole,
+  deleteRole,
+  getMenuTree,
+  type RoleItem,
+  type UpdateRoleData,
+  type MenuTreeItem,
+} from "@/lib/role-api"
+import Toast from "@/components/Toast"
+import DeleteConfirmModal from "@/components/DeleteConfirmModal"
 
-interface Role {
-  id: string;
-  name: string;
-  description: string;
-  permissions: string[];
-  userCount: number;
-  creationTime: string;
-  lastUpdate: string;
-}
+export default function RoleDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = React.use(params)
+  const searchParams = useSearchParams()
+  const mode = searchParams.get("mode") || "view"
+  const menuTreeParam = searchParams.get("menuTree")
 
-// Mock data - in real app this would come from API
-const role: Role = {
-  id: '01',
-  name: '管理员',
-  description: '拥有所有权限的超级管理员',
-  permissions: ['view_user', 'edit_content', 'view_settings', 'view_media', 'delete_content', 'view_dashboard'],
-  userCount: 2,
-  creationTime: '2023.04.10 12:00',
-  lastUpdate: '2023.04.10 16:00'
-};
+  const [role, setRole] = useState<RoleItem | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isEditing, setIsEditing] = useState(mode === "edit")
+  const [isSaving, setIsSaving] = useState(false)
+  const [toast, setToast] = useState<{
+    message: string
+    type: "success" | "error"
+    isVisible: boolean
+  }>({
+    message: "",
+    type: "success",
+    isVisible: false,
+  })
 
-// Permission tree structure for the detail page
-const permissionTree = [
-  {
-    category: '用户管理',
-    permissions: [
-      { id: 'user_list', name: '用户列表', checked: true },
-      { id: 'add_user', name: '新增用户', checked: true },
-      { id: 'edit_user', name: '编辑用户', checked: true },
-      { id: 'delete_user', name: '删除用户', checked: false }
-    ]
-  },
-  {
-    category: '内容管理',
-    permissions: [
-      { id: 'content_list', name: '内容列表', checked: true },
-      { id: 'add_content', name: '新增内容', checked: true },
-      { id: 'edit_content', name: '编辑内容', checked: true },
-      { id: 'delete_content', name: '删除内容', checked: true }
-    ]
-  },
-  {
-    category: '媒体管理',
-    permissions: [
-      { id: 'media_list', name: '媒体列表', checked: true },
-      { id: 'add_media', name: '新增媒体', checked: false },
-      { id: 'edit_media', name: '编辑媒体', checked: false },
-      { id: 'delete_media', name: '删除媒体', checked: false }
-    ]
-  },
-  {
-    category: '团队管理',
-    permissions: [
-      { id: 'team_list', name: '团队列表', checked: false },
-      { id: 'add_team', name: '新增团队', checked: false },
-      { id: 'edit_team', name: '编辑团队', checked: false },
-      { id: 'delete_team', name: '删除团队', checked: false }
-    ]
-  },
-  {
-    category: '代码管理',
-    permissions: [
-      { id: 'code_list', name: '代码列表', checked: false },
-      { id: 'add_code', name: '新增代码', checked: false },
-      { id: 'edit_code', name: '编辑代码', checked: false },
-      { id: 'delete_code', name: '删除代码', checked: false }
-    ]
-  },
-  {
-    category: '会话管理',
-    permissions: [
-      { id: 'conversation_list', name: '会话列表', checked: false },
-      { id: 'add_conversation', name: '新增会话', checked: false },
-      { id: 'edit_conversation', name: '编辑会话', checked: false },
-      { id: 'delete_conversation', name: '删除会话', checked: false }
-    ]
-  },
-  {
-    category: '系统',
-    permissions: [
-      { id: 'system_settings', name: '系统设置', checked: true },
-      { id: 'log_management', name: '日志管理', checked: false },
-      { id: 'backup_restore', name: '备份恢复', checked: false }
-    ]
-  },
-  {
-    category: '徽章管理',
-    permissions: [
-      { id: 'badge_list', name: '徽章列表', checked: false },
-      { id: 'add_badge', name: '新增徽章', checked: false },
-      { id: 'edit_badge', name: '编辑徽章', checked: false },
-      { id: 'delete_badge', name: '删除徽章', checked: false }
-    ]
+  // Menu tree state - get from URL params instead of loading
+  const [menuTree, setMenuTree] = useState<MenuTreeItem[]>([])
+  const [isMenuTreeLoading, setIsMenuTreeLoading] = useState(false)
+
+  // Collapsible state for menu sections
+  const [collapsedSections, setCollapsedSections] = useState<Set<number>>(
+    new Set()
+  )
+
+  // Selected menu codes state
+  const [selectedMenuCodes, setSelectedMenuCodes] = useState<Set<string>>(
+    new Set()
+  )
+
+  // Debug: Log selectedMenuCodes changes
+  useEffect(() => {
+    console.log("selectedMenuCodes updated:", Array.from(selectedMenuCodes))
+  }, [selectedMenuCodes])
+
+  // Delete modal state
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  // Load role data
+  const loadRole = useCallback(async () => {
+    if (!id) return
+
+    setIsLoading(true)
+    try {
+      const result = await getRoleById(parseInt(id))
+
+      if (result.success && result.data) {
+        setRole(result.data)
+
+        // Initialize selected menu codes from role.menus
+        if (result.data.menus) {
+          const menuCodes = result.data.menus.map((menu) => menu.code)
+          // Remove duplicates using Set
+          const uniqueMenuCodes = Array.from(new Set(menuCodes))
+          console.log("Role menus:", result.data.menus)
+          console.log("Extracted menu codes:", menuCodes)
+          console.log("Unique menu codes after deduplication:", uniqueMenuCodes)
+          setSelectedMenuCodes(new Set(uniqueMenuCodes))
+        }
+      } else {
+        setToast({
+          message: result.error || "获取角色信息失败",
+          type: "error",
+          isVisible: true,
+        })
+      }
+    } catch (error) {
+      console.error("Error loading role:", error)
+      setToast({
+        message: "加载角色数据失败",
+        type: "error",
+        isVisible: true,
+      })
+    } finally {
+      setIsLoading(false)
+    }
+  }, [id])
+
+  // Load data on component mount
+  useEffect(() => {
+    const loadData = async () => {
+      // Parse menu tree from URL params
+      if (menuTreeParam) {
+        try {
+          const parsedMenuTree = JSON.parse(decodeURIComponent(menuTreeParam))
+          setMenuTree(parsedMenuTree)
+          setIsMenuTreeLoading(false)
+        } catch (error) {
+          console.error("Error parsing menu tree from URL:", error)
+          setIsMenuTreeLoading(false)
+        }
+      }
+
+      // Load role data
+      await loadRole()
+    }
+    loadData()
+  }, [loadRole, menuTreeParam])
+
+  const handleSave = async () => {
+    if (!role) return
+
+    setIsSaving(true)
+    try {
+      const updateData: UpdateRoleData = {
+        name: role.name,
+        description: role.description,
+        status: role.status,
+        admin_ids: role.admin_ids,
+        menu_ids: Array.from(selectedMenuCodes)
+          .map((code) => {
+            // Find the menu item in the tree to get its ID
+            const findMenuIdInTree = (items: MenuTreeItem[]): number | null => {
+              for (const item of items) {
+                if (item.code === code) {
+                  return item.id
+                }
+                if (item.children) {
+                  const found = findMenuIdInTree(item.children)
+                  if (found) return found
+                }
+              }
+              return null
+            }
+
+            return findMenuIdInTree(menuTree) || 0
+          })
+          .filter((id) => id !== 0), // Remove any invalid IDs
+     
+      }
+
+      const result = await updateRole(role?.id, updateData)
+
+      if (result.success) {
+        setToast({
+          message: "角色更新成功！",
+          type: "success",
+          isVisible: true,
+        })
+        setIsEditing(false)
+        // Reload data to get any server-side changes
+        loadRole()
+      } else {
+        setToast({
+          message: result.error || "更新失败",
+          type: "error",
+          isVisible: true,
+        })
+      }
+    } catch (error) {
+      console.error("Error updating role:", error)
+      setToast({
+        message: "更新失败，请重试",
+        type: "error",
+        isVisible: true,
+      })
+    } finally {
+      setIsSaving(false)
+    }
   }
-];
 
+  const handleCancel = () => {
+    setIsEditing(false)
+    // Reload original data
+    loadRole()
+  }
 
+  const handleDelete = () => {
+    setIsDeleteModalOpen(true)
+  }
 
-export default function RoleDetailPage({ params }: { params: { id: string } }) {
-  const searchParams = useSearchParams();
-  const mode = searchParams.get('mode') || 'view';
-  const [formData, setFormData] = useState<Role>(role);
-  const [isEditing, setIsEditing] = useState(mode === 'edit');
-  const [permissions, setPermissions] = useState(permissionTree);
+  const handleConfirmDelete = async () => {
+    if (!role) return
+
+    setIsDeleting(true)
+    try {
+      const result = await deleteRole(role?.id)
+
+      if (result.success) {
+        setToast({
+          message: "角色删除成功！",
+          type: "success",
+          isVisible: true,
+        })
+        // Redirect to role list after successful deletion
+        window.location.href = "/permissions/roles"
+      } else {
+        setToast({
+          message: result.error || "删除失败",
+          type: "error",
+          isVisible: true,
+        })
+      }
+    } catch (error) {
+      console.error("Error deleting role:", error)
+      setToast({
+        message: "删除失败，请重试",
+        type: "error",
+        isVisible: true,
+      })
+    } finally {
+      setIsDeleting(false)
+      setIsDeleteModalOpen(false)
+    }
+  }
+
+  const handleInputChange = (field: keyof RoleItem, value: any) => {
+    if (!role) return
+    setRole((prev) => (prev ? { ...prev, [field]: value } : null))
+  }
+
+  const toggleSection = (menuId: number) => {
+    setCollapsedSections((prev) => {
+      const newSet = new Set(prev)
+      if (newSet.has(menuId)) {
+        newSet.delete(menuId)
+      } else {
+        newSet.add(menuId)
+      }
+      return newSet
+    })
+  }
+
+  // Helper function to check if parent should be indeterminate
+  const isParentIndeterminate = (menuItem: MenuTreeItem): boolean => {
+    if (!menuItem.children || menuItem.children.length === 0) return false
+
+    const hasCheckedChildren = menuItem.children.some((child) =>
+      selectedMenuCodes.has(child.code)
+    )
+    const hasUncheckedChildren = menuItem.children.some(
+      (child) => !selectedMenuCodes.has(child.code)
+    )
+    return hasCheckedChildren && hasUncheckedChildren
+  }
+
+  if (isLoading) {
+    return (
+      <ProtectedRoute>
+        <CMSLayout>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">加载中...</div>
+          </div>
+        </CMSLayout>
+      </ProtectedRoute>
+    )
+  }
+
+  if (!role) {
+    return (
+      <ProtectedRoute>
+        <CMSLayout>
+          <div className="flex items-center justify-center h-64">
+            <div className="text-gray-500">角色不存在</div>
+          </div>
+        </CMSLayout>
+      </ProtectedRoute>
+    )
+  }
+
   return (
     <ProtectedRoute>
       <CMSLayout>
@@ -126,7 +308,7 @@ export default function RoleDetailPage({ params }: { params: { id: string } }) {
                 <span className="text-sm">返回列表</span>
               </Link>
               <h1 className="text-xl font-bold text-gray-900">
-                角色信息 {isEditing && <span className="text-sm font-normal text-gray-500">(编辑模式)</span>}
+                {isEditing ? "编辑角色" : "角色详情"}
               </h1>
             </div>
           </div>
@@ -134,24 +316,100 @@ export default function RoleDetailPage({ params }: { params: { id: string } }) {
           {/* Basic Information */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">基本信息</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                基本信息
+              </h3>
               <div className="space-y-4">
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <span className="text-sm font-medium text-gray-600">ID:</span>
-                  <span className="text-sm text-gray-900">{formData.id}</span>
+                  <span className="text-sm text-gray-900">{role?.id}</span>
                 </div>
+
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">名称:</span>
-                  <span className="text-sm text-gray-900">{formData.name}</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    名称:
+                  </span>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      value={role?.name}
+                      onChange={(e) =>
+                        handleInputChange("name", e.target.value)
+                      }
+                      className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    />
+                  ) : (
+                    <span className="text-sm text-gray-900">{role?.name}</span>
+                  )}
                 </div>
+
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">创建时间:</span>
-                  <span className="text-sm text-gray-900">{formData.creationTime}</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    描述:
+                  </span>
+                  {isEditing ? (
+                    <textarea
+                      value={role?.description}
+                      onChange={(e) =>
+                        handleInputChange("description", e.target.value)
+                      }
+                      className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                      rows={2}
+                    />
+                  ) : (
+                    <span className="text-sm text-gray-900">
+                      {role?.description}
+                    </span>
+                  )}
                 </div>
+
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">上次更新:</span>
-                  <span className="text-sm text-gray-900">{formData.lastUpdate}</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    状态:
+                  </span>
+                  {isEditing ? (
+                    <select
+                      value={role?.status || 1}
+                      onChange={(e) =>
+                        handleInputChange("status", parseInt(e.target.value))
+                      }
+                      className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
+                    >
+                      <option value={1}>启用</option>
+                      <option value={0}>禁用</option>
+                    </select>
+                  ) : (
+                    <span
+                      className={`text-sm px-3 py-1 rounded ${
+                        (role?.status || 1) === 1
+                          ? "bg-green-100 text-green-800"
+                          : "bg-red-100 text-red-800"
+                      }`}
+                    >
+                      {(role?.status || 1) === 1 ? "启用" : "禁用"}
+                    </span>
+                  )}
                 </div>
+
+                <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                  <span className="text-sm font-medium text-gray-600">
+                    创建时间:
+                  </span>
+                  <span className="text-sm text-gray-900">
+                    {new Date(role?.created_at).toLocaleString("zh-CN")}
+                  </span>
+                </div>
+
+                {role?.updated_at && (
+                  <div className="flex justify-between items-center py-3 border-b border-gray-100">
+                    <span className="text-sm font-medium text-gray-600">
+                      更新时间:
+                    </span>
+                    <span className="text-sm text-gray-900">
+                      {new Date(role?.updated_at).toLocaleString("zh-CN")}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -159,102 +417,294 @@ export default function RoleDetailPage({ params }: { params: { id: string } }) {
           {/* Permission Configuration */}
           <div className="bg-white shadow rounded-lg mt-6">
             <div className="px-6 py-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">权限配置</h3>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                权限配置
+              </h3>
               <div className="space-y-3">
-                {permissions.map((category) => (
-                  <div key={category.category} className="border border-gray-200 rounded-md">
-                    <div className="flex items-center justify-between p-3 bg-gray-50 border-b border-gray-200">
-                      <h4 className="text-sm font-medium text-gray-700">{category.category}</h4>
-                      <button className="text-gray-400 hover:text-gray-600">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-                        </svg>
-                      </button>
-                    </div>
-                    <div className="p-3 space-y-2">
-                      {category.permissions.map((permission) => (
-                        <label key={permission.id} className="flex items-center">
-                          <input
-                            type="checkbox"
-                            checked={permission.checked}
-                            onChange={(e) => {
-                              if (isEditing) {
-                                const updatedPermissions = permissions.map(cat => {
-                                  if (cat.category === category.category) {
-                                    return {
-                                      ...cat,
-                                      permissions: cat.permissions.map(perm => 
-                                        perm.id === permission.id 
-                                          ? { ...perm, checked: e.target.checked }
-                                          : perm
-                                      )
-                                    };
-                                  }
-                                  return cat;
-                                });
-                                setPermissions(updatedPermissions);
-                              }
-                            }}
-                            disabled={!isEditing}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 disabled:opacity-50"
-                          />
-                          <span className="ml-2 text-sm text-gray-700">{permission.name}</span>
-                        </label>
-                      ))}
-                    </div>
+                {role?.permissions && role?.permissions.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {role?.permissions.map((permission, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-blue-100 text-blue-800"
+                      >
+                        {permission}
+                      </span>
+                    ))}
                   </div>
-                ))}
+                ) : (
+                  <div className="text-gray-500 text-center py-4">
+                    暂无权限配置
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Associated Users */}
+          {/* Menu Tree Configuration */}
           <div className="bg-white shadow rounded-lg mt-6">
             <div className="px-6 py-6">
-              <h3 className="text-lg font-medium text-gray-900 mb-4">关联用户</h3>
-              <div className="space-y-4">
-                <div className="flex items-end space-x-4">
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">用户账号</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="搜索用户账号"
-                        disabled={!isEditing}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      />
-                      <FiSearch className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                    </div>
+              <h3 className="text-lg font-medium text-gray-900 mb-4">
+                菜单权限配置
+              </h3>
+
+              {/* Debug info */}
+              <div className="mb-4 p-3 bg-gray-100 rounded text-sm">
+                <strong>Debug Info:</strong> selectedMenuCodes:{" "}
+                {Array.from(selectedMenuCodes).join(", ")}
+              </div>
+
+              <div className="space-y-2">
+                {isMenuTreeLoading ? (
+                  <div className="text-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600 mx-auto"></div>
+                    <p className="text-gray-500 mt-3">加载菜单树中...</p>
                   </div>
-                  <div className="flex-1">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">用户名称</label>
-                    <div className="relative">
-                      <input
-                        type="text"
-                        placeholder="搜索用户名称"
-                        disabled={!isEditing}
-                        className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100 disabled:cursor-not-allowed"
-                      />
-                      <FiSearch className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                    </div>
+                ) : menuTree?.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500">
+                    暂无菜单数据
                   </div>
-                  <div className="flex items-end">
-                    <button 
-                      disabled={!isEditing}
-                      className="px-4 py-2 bg-[#8C7E9C] text-white rounded-md hover:bg-[#7A6B8A] transition-colors disabled:bg-gray-300 disabled:cursor-not-allowed"
-                    >
-                      关联
-                    </button>
+                ) : (
+                  <div className="space-y-1">
+                    {menuTree?.map((menuItem) => (
+                      <div key={menuItem.id} className="space-y-1">
+                        {/* Parent Menu Item */}
+                        <div className="flex items-center space-x-3 p-3 rounded-lg hover:bg-gray-50 transition-colors">
+                          <div className="flex items-center space-x-2 flex-1">
+                            <input
+                              type="checkbox"
+                              checked={
+                                selectedMenuCodes.has(menuItem.code) || false
+                              }
+                              ref={(el) => {
+                                if (
+                                  el &&
+                                  menuItem.children &&
+                                  menuItem.children.length > 0
+                                ) {
+                                  el.indeterminate =
+                                    isParentIndeterminate(menuItem)
+                                }
+                              }}
+                              onChange={(e) => {
+                                if (!role || !isEditing) return
+
+                                const newSelectedCodes = new Set(
+                                  selectedMenuCodes
+                                )
+
+                                if (e.target.checked) {
+                                  // Add parent
+                                  newSelectedCodes.add(menuItem.code)
+                                  console.log(`Adding parent: ${menuItem.code}`)
+
+                                  // Add all children if they exist
+                                  if (
+                                    menuItem.children &&
+                                    menuItem.children.length > 0
+                                  ) {
+                                    console.log(
+                                      `Found ${menuItem.children.length} children for ${menuItem.code}`
+                                    )
+                                    const addChildrenRecursively = (
+                                      children: MenuTreeItem[]
+                                    ) => {
+                                      children.forEach((child) => {
+                                        newSelectedCodes.add(child.code)
+                                        console.log(
+                                          `Adding child: ${child.code}`
+                                        )
+                                        if (
+                                          child.children &&
+                                          child.children.length > 0
+                                        ) {
+                                          addChildrenRecursively(child.children)
+                                        }
+                                      })
+                                    }
+                                    addChildrenRecursively(menuItem.children)
+                                  }
+                                } else {
+                                  // Remove parent
+                                  newSelectedCodes.delete(menuItem.code)
+                                  console.log(
+                                    `Removing parent: ${menuItem.code}`
+                                  )
+
+                                  // Remove all children if they exist
+                                  if (
+                                    menuItem.children &&
+                                    menuItem.children.length > 0
+                                  ) {
+                                    console.log(
+                                      `Removing ${menuItem.children.length} children for ${menuItem.code}`
+                                    )
+                                    const removeChildrenRecursively = (
+                                      children: MenuTreeItem[]
+                                    ) => {
+                                      children.forEach((child) => {
+                                        newSelectedCodes.delete(child.code)
+                                        console.log(
+                                          `Removing child: ${child.code}`
+                                        )
+                                        if (
+                                          child.children &&
+                                          child.children.length > 0
+                                        ) {
+                                          removeChildrenRecursively(
+                                            child.children
+                                          )
+                                        }
+                                      })
+                                    }
+                                    removeChildrenRecursively(menuItem.children)
+                                  }
+                                }
+
+                                console.log(
+                                  `Final selected codes:`,
+                                  Array.from(newSelectedCodes)
+                                )
+                                setSelectedMenuCodes(newSelectedCodes)
+                              }}
+                              disabled={!isEditing}
+                              className={`!rounded !border-2 !focus:ring-2 !focus:ring-offset-2 disabled:!opacity-50 transition-all duration-200 ${
+                                selectedMenuCodes.has(menuItem.code)
+                                  ? "!border-green-600 !bg-green-600 !text-white !accent-green-600 !checked:bg-green-600 !checked:border-green-600"
+                                  : "!border-gray-400 !bg-white !text-gray-600 !accent-gray-400 hover:!border-gray-500"
+                              }`}
+                              style={{
+                                accentColor: selectedMenuCodes.has(
+                                  menuItem.code
+                                )
+                                  ? "#059669"
+                                  : "#9CA3AF",
+                              }}
+                            />
+
+                            {/* Expand/Collapse Arrow */}
+                            {menuItem.children &&
+                            menuItem.children.length > 0 ? (
+                              <button
+                                onClick={() => toggleSection(menuItem.id)}
+                                className="text-gray-500 hover:text-purple-600 transition-colors focus:outline-none focus:ring-2 focus:ring-purple-500 rounded p-1"
+                                title={
+                                  collapsedSections.has(menuItem.id)
+                                    ? "展开"
+                                    : "收起"
+                                }
+                              >
+                                <span
+                                  className={`text-sm transition-transform duration-200 ${
+                                    collapsedSections.has(menuItem.id)
+                                      ? "rotate-[-90deg]"
+                                      : "rotate-0"
+                                  }`}
+                                >
+                                  {collapsedSections.has(menuItem.id)
+                                    ? "▶"
+                                    : "▼"}
+                                </span>
+                              </button>
+                            ) : (
+                              <span className="text-gray-300 text-sm">•</span>
+                            )}
+
+                            <span className="font-medium text-gray-900">
+                              {menuItem.name}
+                            </span>
+                            <span className="text-sm text-gray-500">
+                              ({menuItem.type})
+                            </span>
+                          </div>
+                          <div className="flex items-center space-x-3 text-sm text-gray-500">
+                            {menuItem.icon && (
+                              <span className="flex items-center space-x-1">
+                                <span className="w-4 h-4">📱</span>
+                                <span>{menuItem.icon}</span>
+                              </span>
+                            )}
+                            <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                              {menuItem.route}
+                            </span>
+                          </div>
+                        </div>
+
+                        {/* Children menus */}
+                        {menuItem.children &&
+                          menuItem.children.length > 0 &&
+                          !collapsedSections.has(menuItem.id) && (
+                            <div className="ml-8 space-y-1">
+                              {menuItem.children.map((childMenu) => (
+                                <div
+                                  key={childMenu.id}
+                                  className="flex items-center space-x-3 p-2 rounded-lg hover:bg-gray-50 transition-colors"
+                                >
+                                  <div className="flex items-center space-x-2 flex-1">
+                                    <input
+                                      type="checkbox"
+                                      checked={
+                                        selectedMenuCodes.has(childMenu.code) ||
+                                        false
+                                      }
+                                      onChange={(e) => {
+                                        if (!role || !isEditing) return
+
+                                        const newSelectedCodes = new Set(
+                                          selectedMenuCodes
+                                        )
+                                        if (e.target.checked) {
+                                          newSelectedCodes.add(childMenu.code)
+                                        } else {
+                                          newSelectedCodes.delete(
+                                            childMenu.code
+                                          )
+                                        }
+                                        setSelectedMenuCodes(newSelectedCodes)
+                                      }}
+                                      disabled={!isEditing}
+                                      className={`!rounded !border-2 !focus:ring-2 !focus:ring-offset-2 disabled:!opacity-50 transition-all duration-200 ${
+                                        selectedMenuCodes.has(childMenu.code)
+                                          ? "!border-green-600 !bg-green-600 !text-white !accent-green-600 !checked:bg-green-600 !checked:border-green-600"
+                                          : "!border-gray-400 !bg-white !text-gray-600 !accent-gray-400 hover:!border-gray-500"
+                                      }`}
+                                      style={{
+                                        accentColor: selectedMenuCodes.has(
+                                          childMenu.code
+                                        )
+                                          ? "#059669"
+                                          : "#9CA3AF",
+                                      }}
+                                    />
+                                    <span className="text-gray-400 text-sm">
+                                      •
+                                    </span>
+                                    <span className="text-gray-700">
+                                      {childMenu.name}
+                                    </span>
+                                    <span className="text-sm text-gray-500">
+                                      ({childMenu.type})
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center space-x-3 text-sm text-gray-500">
+                                    {childMenu.icon && (
+                                      <span className="flex items-center space-x-1">
+                                        <span className="w-4 h-4">🔧</span>
+                                        <span>{childMenu.icon}</span>
+                                      </span>
+                                    )}
+                                    <span className="font-mono text-xs bg-gray-100 px-2 py-1 rounded">
+                                      {childMenu.route}
+                                    </span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          )}
+                      </div>
+                    ))}
                   </div>
-                </div>
-                
-                {/* User pagination */}
-                <div className="flex justify-center space-x-2 mt-4">
-                  <button className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">001</button>
-                  <button className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">002</button>
-                  <button className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">003</button>
-                  <button className="px-3 py-1 text-sm border border-gray-300 rounded hover:bg-gray-50">004</button>
-                </div>
+                )}
               </div>
             </div>
           </div>
@@ -263,33 +713,71 @@ export default function RoleDetailPage({ params }: { params: { id: string } }) {
           <div className="flex justify-end space-x-3 mt-6">
             {isEditing ? (
               <>
-                <button 
-                  onClick={() => setIsEditing(false)}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md transition-colors"
+                <button
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-50"
                 >
                   取消
                 </button>
-                <button 
-                  onClick={() => {
-                    alert('保存成功！');
-                    setIsEditing(false);
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-pink-500 hover:bg-pink-600 rounded-md transition-colors"
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="px-4 py-2 text-sm font-medium text-white bg-pink-500 hover:bg-pink-600 rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
-                  保存
+                  {isSaving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      保存中...
+                    </>
+                  ) : (
+                    <>
+                      <FiSave className="w-4 h-4" />
+                      保存
+                    </>
+                  )}
                 </button>
               </>
             ) : (
-              <button
-                onClick={() => setIsEditing(true)}
-                className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors"
-              >
-                编辑
-              </button>
+              <>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors flex items-center gap-2"
+                >
+                  <FiEdit className="w-4 h-4" />
+                  编辑
+                </button>
+
+                <button
+                  onClick={handleDelete}
+                  className="px-4 py-2 text-sm font-medium text-red-600 bg-white hover:bg-red-50 border border-red-200 rounded-md transition-colors flex items-center gap-2"
+                >
+                  <FiTrash2 className="w-4 h-4" />
+                  删除
+                </button>
+              </>
             )}
           </div>
         </div>
+
+        {/* Toast notification */}
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.isVisible}
+          onClose={() => setToast((prev) => ({ ...prev, isVisible: false }))}
+        />
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={isDeleteModalOpen}
+          onClose={() => setIsDeleteModalOpen(false)}
+          onConfirm={handleConfirmDelete}
+          title="删除角色"
+          message="确定要删除这个角色吗？此操作无法撤销。"
+          itemName={role?.name || ""}
+        />
       </CMSLayout>
     </ProtectedRoute>
-  );
+  )
 }
