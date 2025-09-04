@@ -20,132 +20,142 @@ export default function Dashboard() {
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        setLoading(true);
-        console.log('=== Dashboard API Debug ===');
-        console.log('Fetching dashboard data...');
-        
+        setLoading(true)
+
         // Check if we have a token
-        const token = localStorage.getItem('authToken');
-        console.log('Token exists:', !!token);
+        const token = localStorage.getItem("authToken")
+        console.log("Token exists:", !!token)
         if (token) {
-          console.log('Token preview:', token.substring(0, 20) + '...');
+          console.log("Token preview:", token.substring(0, 20) + "...")
         }
-        
-        const response = await getDashboardData();
-        console.log('Dashboard API response:', response);
-        console.log('Response success:', response.success);
-        console.log('Response data:', response.data);
-        console.log('Response error:', response.error);
-        
+
+        const response = await getDashboardData()
+
         if (response.success && response.data) {
-          console.log('Dashboard data received:', response.data.data);
-          setDashboardData(response.data.data);
+          console.log("Dashboard data received:", response.data)
+          setDashboardData(response.data)
         } else {
           // Handle CORS and auth issues
-          if (response.error?.includes('Unauthorized') || 
-              response.error?.includes('401') ||
-              response.error?.includes('Failed to fetch') ||
-              response.error?.includes('CORS')) {
-            console.log('Dashboard API: CORS/Auth issue - using sample data');
-            console.log('Current token:', localStorage.getItem('authToken')?.substring(0, 20) + '...');
+          if (
+            response.error?.includes("Unauthorized") ||
+            response.error?.includes("401") ||
+            response.error?.includes("Failed to fetch") ||
+            response.error?.includes("CORS")
+          ) {
+            console.log("Dashboard API: CORS/Auth issue - using sample data")
+            console.log(
+              "Current token:",
+              localStorage.getItem("authToken")?.substring(0, 20) + "..."
+            )
             // Don't show error for CORS/auth issues, just use sample data
-            setError(null);
+            setError(null)
           } else {
-            console.log('Dashboard API error:', response.error);
-            setError(response.error || 'Failed to fetch dashboard data');
+            console.log("Dashboard API error:", response.error)
+            setError(response.error || "Failed to fetch dashboard data")
           }
         }
       } catch (err) {
-        console.error('Dashboard data fetch error:', err);
-        console.error('Error type:', typeof err);
-        console.error('Error message:', err instanceof Error ? err.message : 'Unknown error');
+        console.error("Dashboard data fetch error:", err)
+        console.error("Error type:", typeof err)
+        console.error(
+          "Error message:",
+          err instanceof Error ? err.message : "Unknown error"
+        )
         // Don't show error for network issues, just use sample data
-        setError(null);
+        setError(null)
       } finally {
-        setLoading(false);
-        console.log('=== End Dashboard API Debug ===');
+        setLoading(false)
+        console.log("=== End Dashboard API Debug ===")
       }
-    };
+    }
 
-    fetchDashboardData();
-  }, []);
+    fetchDashboardData()
+  }, [])
 
   // Sample data for charts
   const userActivityData = [
-    { month: 'Jan', thisYear: 12000, lastYear: 8000 },
-    { month: 'Feb', thisYear: 19000, lastYear: 12000 },
-    { month: 'Mar', thisYear: 15000, lastYear: 10000 },
-    { month: 'Apr', thisYear: 22000, lastYear: 14000 },
-    { month: 'May', thisYear: 28000, lastYear: 16000 },
-    { month: 'Jun', thisYear: 25000, lastYear: 18000 },
-    { month: 'Jul', thisYear: 24000, lastYear: 17000 },
-  ];
+    { month: "Jan", thisYear: 12000, lastYear: 8000 },
+    { month: "Feb", thisYear: 19000, lastYear: 12000 },
+    { month: "Mar", thisYear: 15000, lastYear: 10000 },
+    { month: "Apr", thisYear: 22000, lastYear: 14000 },
+    { month: "May", thisYear: 28000, lastYear: 16000 },
+    { month: "Jun", thisYear: 25000, lastYear: 18000 },
+    { month: "Jul", thisYear: 24000, lastYear: 17000 },
+  ]
 
   const deviceData = [
-    { name: 'Linux', value: 8000, color: '#60A5FA' },
-    { name: 'Mac', value: 25000, color: '#14B8A6' },
-    { name: 'IOS', value: 18000, color: '#1F2937' },
-    { name: 'Windows', value: 22000, color: '#60A5FA' },
-    { name: 'Android', value: 15000, color: '#14B8A6' },
-    { name: '其他', value: 5000, color: '#9CA3AF' },
-  ];
+    { name: "Linux", value: 8000, color: "#60A5FA" },
+    { name: "Mac", value: 25000, color: "#14B8A6" },
+    { name: "IOS", value: 18000, color: "#1F2937" },
+    { name: "Windows", value: 22000, color: "#60A5FA" },
+    { name: "Android", value: 15000, color: "#14B8A6" },
+    { name: "其他", value: 5000, color: "#9CA3AF" },
+  ]
 
   const regionData = [
-    { name: 'United States', value: 52.1, color: '#1F2937' },
-    { name: 'Canada', value: 22.8, color: '#60A5FA' },
-    { name: 'Mexico', value: 13.9, color: '#14B8A6' },
-    { name: 'Other', value: 11.2, color: '#9CA3AF' },
-  ];
+    { name: "United States", value: 52.1, color: "#1F2937" },
+    { name: "Canada", value: 22.8, color: "#60A5FA" },
+    { name: "Mexico", value: 13.9, color: "#14B8A6" },
+    { name: "Other", value: 11.2, color: "#9CA3AF" },
+  ]
 
   const marketingData = [
-    { month: 'Jan', value: 12000, color: '#60A5FA' },
-    { month: 'Feb', value: 28000, color: '#14B8A6' },
-    { month: 'Mar', value: 15000, color: '#60A5FA' },
-    { month: 'Apr', value: 32000, color: '#14B8A6' },
-    { month: 'May', value: 18000, color: '#60A5FA' },
-    { month: 'Jun', value: 22000, color: '#14B8A6' },
-    { month: 'Jul', value: 25000, color: '#60A5FA' },
-    { month: 'Aug', value: 19000, color: '#14B8A6' },
-    { month: 'Sep', value: 35000, color: '#1F2937' },
-    { month: 'Oct', value: 21000, color: '#60A5FA' },
-    { month: 'Nov', value: 24000, color: '#14B8A6' },
-    { month: 'Dec', value: 28000, color: '#60A5FA' },
-  ];
+    { month: "Jan", value: 12000, color: "#60A5FA" },
+    { month: "Feb", value: 28000, color: "#14B8A6" },
+    { month: "Mar", value: 15000, color: "#60A5FA" },
+    { month: "Apr", value: 32000, color: "#14B8A6" },
+    { month: "May", value: 18000, color: "#60A5FA" },
+    { month: "Jun", value: 22000, color: "#14B8A6" },
+    { month: "Jul", value: 25000, color: "#60A5FA" },
+    { month: "Aug", value: 19000, color: "#14B8A6" },
+    { month: "Sep", value: 35000, color: "#1F2937" },
+    { month: "Oct", value: 21000, color: "#60A5FA" },
+    { month: "Nov", value: 24000, color: "#14B8A6" },
+    { month: "Dec", value: 28000, color: "#60A5FA" },
+  ]
 
   const metrics = [
     {
-      title: '总用户',
-      value: dashboardData ? dashboardData.total_users.toLocaleString() : '0',
-      trend: dashboardData && dashboardData.today_users > 0 ? `+${dashboardData.today_users}` : '+0',
+      title: "总用户",
+      value: dashboardData ? dashboardData.total_users.toLocaleString() : "0",
+      trend:
+        dashboardData && dashboardData.today_users > 0
+          ? `+${dashboardData.today_users}`
+          : "+0",
       trendUp: dashboardData ? dashboardData.today_users > 0 : false,
       icon: Users,
-      color: 'text-blue-600'
+      color: "text-blue-600",
     },
     {
-      title: '今日用户',
-      value: dashboardData ? dashboardData.today_users.toLocaleString() : '0',
-      trend: dashboardData && dashboardData.today_users > 0 ? '+100%' : '+0%',
+      title: "今日用户",
+      value: dashboardData ? dashboardData.today_users.toLocaleString() : "0",
+      trend: dashboardData && dashboardData.today_users > 0 ? "+100%" : "+0%",
       trendUp: dashboardData ? dashboardData.today_users > 0 : false,
       icon: UserPlus,
-      color: 'text-green-600'
+      color: "text-green-600",
     },
     {
-      title: '易经文章',
-      value: dashboardData ? dashboardData.total_yijing.toLocaleString() : '0',
-      trend: '+12.5%',
+      title: "易经文章",
+      value: dashboardData ? dashboardData.total_yijing.toLocaleString() : "0",
+      trend: "+12.5%",
       trendUp: true,
       icon: BookOpen,
-      color: 'text-purple-600'
+      color: "text-purple-600",
     },
     {
-      title: '命盘总数',
-      value: dashboardData ? dashboardData.total_natal_charts.toLocaleString() : '0',
-      trend: dashboardData && dashboardData.today_natal_charts > 0 ? `+${dashboardData.today_natal_charts}` : '+0',
+      title: "命盘总数",
+      value: dashboardData
+        ? dashboardData.today_natal_charts.toLocaleString()
+        : "0",
+      trend:
+        dashboardData && dashboardData.today_natal_charts > 0
+          ? `+${dashboardData.today_natal_charts}`
+          : "+0",
       trendUp: dashboardData ? dashboardData.today_natal_charts > 0 : false,
       icon: Calendar,
-      color: 'text-orange-600'
-    }
-  ];
+      color: "text-orange-600",
+    },
+  ]
 
   // Show loading state
   if (loading) {
