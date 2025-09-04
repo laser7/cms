@@ -1,12 +1,11 @@
 import { apiClient } from './api-client';
-import { 
+import {
   AI,
-  AIListParams, 
-  AIListResponse, 
+  AIListParams,
+  AIListResponse,
   ApiResponse,
-  RawApiResponse,
-  CreateAIData
-} from '../types';
+  CreateAIData,
+} from "../types"
 
 /**
  * Get list of AI features with pagination and filtering
@@ -16,66 +15,52 @@ import {
 export const getAIList = async (
   params: AIListParams = {}
 ): Promise<ApiResponse<AIListResponse>> => {
-  const {
-    page = 1,
-    page_size = 10,
-    search = '',
-    page_filter = ''
-  } = params;
+  const { page = 1, page_size = 10, search = "", page_filter = "" } = params
 
   // Build query string
-  const queryParams = new URLSearchParams();
-  queryParams.append('page', page.toString());
-  queryParams.append('page_size', page_size.toString());
-  
+  const queryParams = new URLSearchParams()
+  queryParams.append("page", page.toString())
+  queryParams.append("page_size", page_size.toString())
+
   if (search) {
-    queryParams.append('search', search);
-  }
-  
-  if (page_filter) {
-    queryParams.append('page_filter', page_filter);
+    queryParams.append("search", search)
   }
 
-  const endpoint = `/admin/ais?${queryParams.toString()}`;
-  
+  if (page_filter) {
+    queryParams.append("page_filter", page_filter)
+  }
+
+  const endpoint = `/admin/ais?${queryParams.toString()}`
+
   try {
-    const response = await apiClient<RawApiResponse<AIListResponse>>(endpoint);
-    
+    const response = await apiClient<AIListResponse>(endpoint)
+
+    // Transform the response to match the expected ApiResponse format
     if (response.success && response.data) {
-      // Check if the actual API response indicates success
-      if (response.data.code === 200 || response.data.code === 0) {
-        return {
-          code: 0,
-          data: response.data.data, // Extract the actual data from the nested structure
-          error: '',
-          msg: response.data.msg || 'Success'
-        };
-      } else {
-        return {
-          code: 1,
-          data: {} as AIListResponse,
-          error: response.data.msg || 'Failed to fetch AI list',
-          msg: 'Error'
-        };
+      return {
+        code: 0,
+        data: response.data,
+        error: "",
+        msg: "Success",
       }
     } else {
       return {
         code: 1,
         data: {} as AIListResponse,
-        error: response.error || 'Failed to fetch AI list',
-        msg: 'Error'
-      };
+        error: response.error || "Failed to fetch AI list",
+        msg: response.error || "Failed to fetch AI list",
+      }
     }
   } catch (error) {
-    console.error('Error fetching AI list:', error);
+    console.error("Error fetching AI list:", error)
     return {
       code: 1,
       data: {} as AIListResponse,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      msg: 'Error'
-    };
+      error: error instanceof Error ? error.message : "Unknown error",
+      msg: "Error",
+    }
   }
-};
+}
 
 /**
  * Get a single AI feature by ID
@@ -84,43 +69,34 @@ export const getAIList = async (
  */
 export const getAIById = async (id: number): Promise<ApiResponse<AI>> => {
   try {
-    const response = await apiClient<RawApiResponse<AI>>(`/admin/ais/${id}`);
-    
+    const response = await apiClient<AI>(`/admin/ais/${id}`)
+
+    // Transform the response to match the expected ApiResponse format
     if (response.success && response.data) {
-      // Check if the actual API response indicates success
-      if (response.data.code === 200 || response.data.code === 0) {
-        return {
-          code: 0,
-          data: response.data.data, // Extract the actual data from the nested structure
-          error: '',
-          msg: response.data.msg || 'Success'
-        };
-      } else {
-        return {
-          code: 1,
-          data: {} as AI,
-          error: response.data.msg || 'Failed to fetch AI',
-          msg: 'Error'
-        };
+      return {
+        code: 0,
+        data: response.data,
+        error: "",
+        msg: "Success",
       }
     } else {
       return {
         code: 1,
         data: {} as AI,
-        error: response.error || 'Failed to fetch AI',
-        msg: 'Error'
-      };
+        error: response.error || "Failed to fetch AI",
+        msg: response.error || "Failed to fetch AI",
+      }
     }
   } catch (error) {
-    console.error('Error fetching AI:', error);
+    console.error("Error fetching AI:", error)
     return {
       code: 1,
       data: {} as AI,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      msg: 'Error'
-    };
+      error: error instanceof Error ? error.message : "Unknown error",
+      msg: "Error",
+    }
   }
-};
+}
 
 /**
  * Create a new AI feature
@@ -131,46 +107,37 @@ export const createAI = async (
   aiData: CreateAIData
 ): Promise<ApiResponse<AI>> => {
   try {
-    const response = await apiClient<RawApiResponse<AI>>('/admin/ais', {
-      method: 'POST',
-      body: JSON.stringify(aiData)
-    });
-    
+    const response = await apiClient<AI>("/admin/ais", {
+      method: "POST",
+      body: JSON.stringify(aiData),
+    })
+
+    // Transform the response to match the expected ApiResponse format
     if (response.success && response.data) {
-      // Check if the actual API response indicates success
-      if (response.data.code === 200 || response.data.code === 0) {
-        return {
-          code: 0,
-          data: response.data.data, // Extract the actual data from the nested structure
-          error: '',
-          msg: response.data.msg || 'Success'
-        };
-      } else {
-        return {
-          code: 1,
-          data: {} as AI,
-          error: response.data.msg || 'Failed to create AI',
-          msg: 'Error'
-        };
+      return {
+        code: 0,
+        data: response.data,
+        error: "",
+        msg: "Success",
       }
     } else {
       return {
         code: 1,
         data: {} as AI,
-        error: response.error || 'Failed to create AI',
-        msg: 'Error'
-      };
+        error: response.error || "Failed to create AI",
+        msg: response.error || "Failed to create AI",
+      }
     }
   } catch (error) {
-    console.error('Error creating AI:', error);
+    console.error("Error creating AI:", error)
     return {
       code: 1,
       data: {} as AI,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      msg: 'Error'
-    };
+      error: error instanceof Error ? error.message : "Unknown error",
+      msg: "Error",
+    }
   }
-};
+}
 
 /**
  * Update an existing AI feature
@@ -183,46 +150,37 @@ export const updateAI = async (
   aiData: Partial<CreateAIData>
 ): Promise<ApiResponse<AI>> => {
   try {
-    const response = await apiClient<RawApiResponse<AI>>(`/admin/ais/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(aiData)
-    });
-    
+    const response = await apiClient<AI>(`/admin/ais/${id}`, {
+      method: "PUT",
+      body: JSON.stringify(aiData),
+    })
+
+    // Transform the response to match the expected ApiResponse format
     if (response.success && response.data) {
-      // Check if the actual API response indicates success
-      if (response.data.code === 200 || response.data.code === 0) {
-        return {
-          code: 0,
-          data: response.data.data, // Extract the actual data from the nested structure
-          error: '',
-          msg: response.data.msg || 'Success'
-        };
-      } else {
-        return {
-          code: 1,
-          data: {} as AI,
-          error: response.data.msg || 'Failed to update AI',
-          msg: 'Error'
-        };
+      return {
+        code: 0,
+        data: response.data,
+        error: "",
+        msg: "Success",
       }
     } else {
       return {
         code: 1,
         data: {} as AI,
-        error: response.error || 'Failed to update AI',
-        msg: 'Error'
-      };
+        error: response.error || "Failed to update AI",
+        msg: response.error || "Failed to update AI",
+      }
     }
   } catch (error) {
-    console.error('Error updating AI:', error);
+    console.error("Error updating AI:", error)
     return {
       code: 1,
       data: {} as AI,
-      error: error instanceof Error ? error.message : 'Unknown error',
-      msg: 'Error'
-    };
+      error: error instanceof Error ? error.message : "Unknown error",
+      msg: "Error",
+    }
   }
-};
+}
 
 /**
  * Delete an AI feature
@@ -230,92 +188,81 @@ export const updateAI = async (
  * @returns Promise with deletion result
  */
 export const deleteAI = async (id: number): Promise<ApiResponse<string>> => {
-  const endpoint = `/admin/ais/${id}`;
-  
-  try {
-    const response = await apiClient<RawApiResponse<string>>(endpoint, {
-      method: 'DELETE'
-    });
-    
-    if (response.success && response.data) {
-      if (response.data.code === 200 || response.data.code === 0) {
-        return {
-          code: 0,
-          data: response.data.data,
-          error: '',
-          msg: response.data.msg || 'Success'
-        };
-              } else {
-          return {
-            code: response.data.code,
-            data: '',
-            error: response.data.msg || 'Delete failed',
-            msg: response.data.msg || 'Delete failed'
-          };
-        }
-    } else {
-      return {
-        code: -1,
-        data: '',
-        error: 'Network error',
-        msg: 'Network error'
-      };
-    }
-  } catch (error) {
-    return {
-      code: -1,
-      data: '',
-      error: 'Request failed',
-      msg: 'Request failed'
-    };
-  }
-};
+  const endpoint = `/admin/ais/${id}`
 
-export const testAI = async (id: number, requestData: { request: string }): Promise<ApiResponse<{
-  processing_time: number;
-  response: string;
-}>> => {
-  const endpoint = `/admin/ais/${id}/test`;
-  
   try {
-    const response = await apiClient<RawApiResponse<{
-      processing_time: number;
-      response: string;
-    }>>(endpoint, {
-      method: 'POST',
-      body: JSON.stringify(requestData)
-    });
-    
+    const response = await apiClient<string>(endpoint, {
+      method: "DELETE",
+    })
+
+    // Transform the response to match the expected ApiResponse format
     if (response.success && response.data) {
-      if (response.data.code === 200 || response.data.code === 0) {
-        return {
-          code: 0,
-          data: response.data.data,
-          error: '',
-          msg: response.data.msg || 'Success'
-        };
-              } else {
-          return {
-            code: response.data.code,
-            data: { processing_time: 0, response: '' },
-            error: response.data.msg || 'Test failed',
-            msg: response.data.msg || 'Test failed'
-          };
-        }
+      return {
+        code: 0,
+        data: response.data,
+        error: "",
+        msg: "Success",
+      }
     } else {
       return {
-        code: -1,
-        data: { processing_time: 0, response: '' },
-        error: 'Network error',
-        msg: 'Network error'
-      };
+        code: 1,
+        data: "",
+        error: response.error || "Delete failed",
+        msg: response.error || "Delete failed",
+      }
     }
   } catch (error) {
     return {
       code: -1,
-      data: { processing_time: 0, response: '' },
-      error: 'Request failed',
-      msg: 'Request failed'
-    };
+      data: "",
+      error: "Request failed",
+      msg: "Request failed",
+    }
   }
-};
+}
+
+export const testAI = async (
+  id: number,
+  requestData: { request: string }
+): Promise<
+  ApiResponse<{
+    processing_time: number
+    response: string
+  }>
+> => {
+  const endpoint = `/admin/ais/${id}/test`
+
+  try {
+    const response = await apiClient<{
+      processing_time: number
+      response: string
+    }>(endpoint, {
+      method: "POST",
+      body: JSON.stringify(requestData),
+    })
+
+    // Transform the response to match the expected ApiResponse format
+    if (response.success && response.data) {
+      return {
+        code: 0,
+        data: response.data,
+        error: "",
+        msg: "Success",
+      }
+    } else {
+      return {
+        code: 1,
+        data: { processing_time: 0, response: "" },
+        error: response.error || "Test failed",
+        msg: response.error || "Test failed",
+      }
+    }
+  } catch (error) {
+    return {
+      code: -1,
+      data: { processing_time: 0, response: "" },
+      error: "Request failed",
+      msg: "Request failed",
+    }
+  }
+}
