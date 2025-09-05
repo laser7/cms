@@ -8,6 +8,7 @@ import { getAIById, updateAI, deleteAI, testAI } from '@/lib/ai-api';
 import { AI } from '@/types';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import DetailPageActions from "@/components/DetailPageActions"
 
 export default function AIFeatureDetailPage() {
   const params = useParams();
@@ -212,23 +213,10 @@ export default function AIFeatureDetailPage() {
           {/* Breadcrumbs */}
           <Breadcrumbs
             items={[
-              { label: 'AI管理', href: '/ai' },
-              { label: aiFeature?.api || 'AI功能详情' }
+              { label: "AI管理", href: "/ai" },
+              { label: aiFeature?.api || "AI功能详情" },
             ]}
           />
-
-          {/* Page header */}
-          <div className="flex items-center justify-end">
-        
-            {mode === 'view' && (
-              <button
-                onClick={handleEdit}
-                className="bg-[#8C7E9C] hover:bg-[#220646] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                编辑AI
-              </button>
-            )}
-          </div>
 
           {/* Basic Information Card */}
           <div className="bg-white shadow rounded-lg">
@@ -252,12 +240,12 @@ export default function AIFeatureDetailPage() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     创建时间
                   </label>
-                                      <input
-                      type="text"
-                      value={aiFeature?.created_at}
-                      disabled
-                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
-                    />
+                  <input
+                    type="text"
+                    value={aiFeature?.created_at}
+                    disabled
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -266,10 +254,10 @@ export default function AIFeatureDetailPage() {
                   <input
                     type="text"
                     value={formData.api}
-                    onChange={(e) => handleInputChange('api', e.target.value)}
-                    disabled={mode === 'view'}
+                    onChange={(e) => handleInputChange("api", e.target.value)}
+                    disabled={mode === "view"}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
+                      mode === "view" ? "bg-gray-50 text-gray-500" : "bg-white"
                     }`}
                     placeholder="输入API端点..."
                   />
@@ -281,10 +269,10 @@ export default function AIFeatureDetailPage() {
                   <input
                     type="text"
                     value={formData.page}
-                    onChange={(e) => handleInputChange('page', e.target.value)}
-                    disabled={mode === 'view'}
+                    onChange={(e) => handleInputChange("page", e.target.value)}
+                    disabled={mode === "view"}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
+                      mode === "view" ? "bg-gray-50 text-gray-500" : "bg-white"
                     }`}
                     placeholder="输入页面名称..."
                   />
@@ -296,10 +284,12 @@ export default function AIFeatureDetailPage() {
                   <input
                     type="text"
                     value={formData.prompt}
-                    onChange={(e) => handleInputChange('prompt', e.target.value)}
-                    disabled={mode === 'view'}
+                    onChange={(e) =>
+                      handleInputChange("prompt", e.target.value)
+                    }
+                    disabled={mode === "view"}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
+                      mode === "view" ? "bg-gray-50 text-gray-500" : "bg-white"
                     }`}
                     placeholder="输入提示词..."
                   />
@@ -312,10 +302,12 @@ export default function AIFeatureDetailPage() {
                   <textarea
                     rows={3}
                     value={formData.function}
-                    onChange={(e) => handleInputChange('function', e.target.value)}
-                    disabled={mode === 'view'}
+                    onChange={(e) =>
+                      handleInputChange("function", e.target.value)
+                    }
+                    disabled={mode === "view"}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent resize-none ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
+                      mode === "view" ? "bg-gray-50 text-gray-500" : "bg-white"
                     }`}
                     placeholder="描述AI功能的作用..."
                   />
@@ -327,10 +319,10 @@ export default function AIFeatureDetailPage() {
                   <input
                     type="text"
                     value={formData.model}
-                    onChange={(e) => handleInputChange('model', e.target.value)}
-                    disabled={mode === 'view'}
+                    onChange={(e) => handleInputChange("model", e.target.value)}
+                    disabled={mode === "view"}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
+                      mode === "view" ? "bg-gray-50 text-gray-500" : "bg-white"
                     }`}
                     placeholder="输入AI模型名称..."
                   />
@@ -338,8 +330,6 @@ export default function AIFeatureDetailPage() {
               </div>
             </div>
           </div>
-
-
 
           {/* Test AI Card - Always Visible */}
           <div className="bg-white shadow rounded-lg">
@@ -360,16 +350,16 @@ export default function AIFeatureDetailPage() {
                     placeholder="例如：请分析我的星座运势，生日是1990年1月1日"
                   />
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <button
                     onClick={handleTestAI}
                     disabled={isTesting || !testRequest.trim()}
                     className="px-4 py-2 bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
                   >
-                    {isTesting ? '测试中...' : '发送测试'}
+                    {isTesting ? "测试中..." : "发送测试"}
                   </button>
-                  
+
                   {testError && (
                     <div className="text-sm text-red-600">
                       错误: {testError}
@@ -383,7 +373,7 @@ export default function AIFeatureDetailPage() {
                       AI响应
                     </label>
                     <textarea
-                      rows={Math.max(6, testResponse.split('\n').length)}
+                      rows={Math.max(6, testResponse.split("\n").length)}
                       value={testResponse}
                       readOnly
                       className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-700 resize-none font-mono text-sm"
@@ -404,32 +394,17 @@ export default function AIFeatureDetailPage() {
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-3">
-            {mode === 'edit'&&  (
-              <>
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  disabled={isDeleting}
-                  className="px-4 py-2 bg-[#C24C4C] hover:bg-[#7A3636] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
-                >
-                  {isDeleting ? '删除中...' : '删除'}
-                </button>
-                <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 border border-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md text-sm font-medium transition-colors"
-                >
-                  取消更新
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="px-4 py-2 bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
-                >
-                  {isSaving ? '保存中...' : '更新'}
-                </button>
-              </>
-            )}
-          </div>
+          <DetailPageActions
+            isEditing={mode === "edit"}
+            pageName="AI"
+            onEdit={handleEdit}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            onDelete={() => setShowDeleteConfirm(true)}
+            isSaving={isSaving}
+            isDeleting={isDeleting}
+            disabled={isSaving || isDeleting}
+          />
         </div>
 
         {/* Delete Confirmation Modal */}
@@ -439,9 +414,9 @@ export default function AIFeatureDetailPage() {
           onConfirm={handleDelete}
           title="确认删除"
           message={`确定要删除AI功能 "${aiFeature?.api}" 吗？此操作无法撤销。`}
-          isLoading={isDeleting}
+          itemName="Delete AI"
         />
       </CMSLayout>
     </ProtectedRoute>
-  );
+  )
 }

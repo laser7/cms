@@ -1,72 +1,75 @@
 'use client';
 
-import React, { useState, useEffect, use } from 'react';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { FiChevronLeft, FiEdit3, FiSave, FiX, FiTrash2 } from 'react-icons/fi';
-import CMSLayout from '@/components/CMSLayout';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import { getUserDetail, deleteUser, UserDetail } from '@/lib/users-api';
-import Breadcrumbs from '@/components/Breadcrumbs';
+import React, { useState, useEffect, use } from "react"
+import { useSearchParams } from "next/navigation"
+import CMSLayout from "@/components/CMSLayout"
+import ProtectedRoute from "@/components/ProtectedRoute"
+import { getUserDetail, deleteUser, UserDetail } from "@/lib/users-api"
+import Breadcrumbs from "@/components/Breadcrumbs"
+import DetailPageActions from "@/components/DetailPageActions"
 
-export default function UserDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const searchParams = useSearchParams();
-  const mode = searchParams.get('mode') || 'view';
-  const [user, setUser] = useState<UserDetail | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isEditing, setIsEditing] = useState(mode === 'edit');
-  const [formData, setFormData] = useState<Partial<UserDetail>>({});
+export default function UserDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const resolvedParams = use(params)
+  const searchParams = useSearchParams()
+  const mode = searchParams.get("mode") || "view"
+  const [user, setUser] = useState<UserDetail | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+  const [isEditing, setIsEditing] = useState(mode === "edit")
+  const [formData, setFormData] = useState<Partial<UserDetail>>({})
 
   // Fetch user detail
   const fetchUserDetail = async () => {
-    setLoading(true);
-    setError(null);
-    
+    setLoading(true)
+    setError(null)
+
     try {
-      const response = await getUserDetail(parseInt(resolvedParams.id));
-      
+      const response = await getUserDetail(parseInt(resolvedParams.id))
+
       if (response.code === 0) {
-        setUser(response.data);
-        setFormData(response.data);
+        setUser(response.data)
+        setFormData(response.data)
       } else {
-        setError(response.msg || 'Failed to fetch user detail');
+        setError(response.msg || "Failed to fetch user detail")
       }
     } catch (err) {
-      setError('Network error occurred');
+      setError("Network error occurred")
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   useEffect(() => {
-    fetchUserDetail();
-  }, [resolvedParams.id]);
+    fetchUserDetail()
+  }, [resolvedParams.id])
 
   useEffect(() => {
-    setIsEditing(mode === 'edit');
-  }, [mode]);
+    setIsEditing(mode === "edit")
+  }, [mode])
 
   const handleDeleteUser = async () => {
-    if (!user) return;
-    
+    if (!user) return
+
     if (confirm(`确定要删除用户 "${user.name}" 吗？此操作不可撤销。`)) {
       try {
-        const response = await deleteUser(user.id);
-        
+        const response = await deleteUser(user.id)
+
         if (response.code === 0) {
-          alert('用户删除成功！');
+          alert("用户删除成功！")
           // Redirect to users list
-          window.location.href = '/users';
+          window.location.href = "/users"
         } else {
-          alert(`删除失败: ${response.msg}`);
+          alert(`删除失败: ${response.msg}`)
         }
       } catch (err) {
-        alert('删除用户时发生错误');
+        alert("删除用户时发生错误")
       }
     }
-  };
+  }
 
   if (loading) {
     return (
@@ -77,7 +80,7 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </CMSLayout>
       </ProtectedRoute>
-    );
+    )
   }
 
   if (error || !user) {
@@ -85,11 +88,11 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
       <ProtectedRoute>
         <CMSLayout>
           <div className="flex items-center justify-center h-64">
-            <div className="text-lg text-red-600">{error || '用户不存在'}</div>
+            <div className="text-lg text-red-600">{error || "用户不存在"}</div>
           </div>
         </CMSLayout>
       </ProtectedRoute>
-    );
+    )
   }
 
   return (
@@ -367,51 +370,22 @@ export default function UserDetailPage({ params }: { params: Promise<{ id: strin
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-3">
-            {isEditing ? (
-              <>
-                <button
-                  onClick={() => {
-                    setIsEditing(false)
-                    setFormData(user) // Reset form data
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md transition-colors flex items-center space-x-2"
-                >
-                  <FiX className="w-4 h-4" />
-                  <span>取消</span>
-                </button>
-                <button
-                  onClick={handleDeleteUser}
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#C24C4C] hover:bg-[#7A3636] rounded-md transition-colors flex items-center space-x-2"
-                >
-                  <FiTrash2 className="w-4 h-4" />
-                  <span>删除</span>
-                </button>
-                <button
-                  onClick={() => {
-                    // Handle save logic here
-                    alert("保存成功！")
-                    setIsEditing(false)
-                    // In real app, you would call an API to update the user
-                  }}
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#8C7E9C] hover:bg-[#7A6B8A] rounded-md transition-colors flex items-center space-x-2"
-                >
-                  <FiSave className="w-4 h-4" />
-                  <span>保存</span>
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 text-sm font-medium text-white bg-[#553C9A] hover:bg-[#4A2F8A] rounded-md transition-colors flex items-center space-x-2"
-                >
-                  <FiEdit3 className="w-4 h-4" />
-                  <span>编辑</span>
-                </button>
-              </>
-            )}
-          </div>
+          <DetailPageActions
+            isEditing={isEditing}
+            pageName="用户"
+            onEdit={() => setIsEditing(true)}
+            onSave={() => {
+              // Handle save logic here
+              alert("保存成功！")
+              setIsEditing(false)
+              // In real app, you would call an API to update the user
+            }}
+            onCancel={() => {
+              setIsEditing(false)
+              setFormData(user) // Reset form data
+            }}
+            onDelete={handleDeleteUser}
+          />
         </div>
       </CMSLayout>
     </ProtectedRoute>

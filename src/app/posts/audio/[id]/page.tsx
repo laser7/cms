@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { getSoundtrackById, updateSoundtrack, deleteSoundtrack } from '@/lib/audio-api';
 import { Soundtrack } from '@/types';
 import Breadcrumbs from '@/components/Breadcrumbs';
+import DetailPageActions from '@/components/DetailPageActions';
 
 export default function AudioDetailPage() {
   const params = useParams();
@@ -178,21 +179,6 @@ export default function AudioDetailPage() {
             ]}
           />
 
-          {/* Page header */}
-          <div className="flex items-center justify-end">
-
-            {mode === 'view' && (
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleEdit}
-                  className="bg-[#553C9A] hover:bg-[#4A2F8A] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-                >
-                  编辑音频
-                </button>
-  
-              </div>
-            )}
-          </div>
 
           {/* Error Display */}
           {error && (
@@ -350,33 +336,18 @@ export default function AudioDetailPage() {
             </div>
           </div>
 
-          {/* Action Buttons - Only show in edit mode */}
-          {mode === 'edit' && (
-            <div className="flex justify-between items-center">
-              <button
-                onClick={() => setShowDeleteConfirm(true)}
-                disabled={isDeleting}
-                className="px-4 py-2 bg-[#C24C4C] hover:bg-red-700 disabled:bg-red-400 text-white rounded-md text-sm font-medium transition-colors"
-              >
-                {isDeleting ? '删除中...' : '删除音频'}
-              </button>
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 border border-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md text-sm font-medium transition-colors"
-                >
-                  取消更新
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="px-4 py-2 bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
-                >
-                  {isSaving ? '保存中...' : '更新'}
-                </button>
-              </div>
-            </div>
-          )}
+          {/* Action Buttons */}
+          <DetailPageActions
+            isEditing={mode === 'edit'}
+            pageName="音频"
+            onEdit={handleEdit}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            onDelete={() => setShowDeleteConfirm(true)}
+            isSaving={isSaving}
+            isDeleting={isDeleting}
+            disabled={isSaving || isDeleting}
+          />
         </div>
 
         {/* Delete Confirmation Modal */}

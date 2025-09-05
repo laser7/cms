@@ -6,6 +6,7 @@ import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { Badge } from '@/types';
 import { FiArrowLeft } from 'react-icons/fi';
+import DetailPageActions from '@/components/DetailPageActions';
 
 // Mock data for badges
 const mockBadges: Badge[] = [
@@ -248,19 +249,18 @@ export default function BadgeDetailPage() {
             </div>
 
             {/* Footer Actions */}
-            <div className="px-6 py-4 border-t border-gray-200 flex justify-end space-x-3">
-              <button
-                onClick={handleCancel}
-                className="px-4 py-2 border border-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md text-sm font-medium transition-colors"
-              >
-                取消更新
-              </button>
-              <button
-                onClick={handleSave}
-                                  className="px-4 py-2 bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white rounded-md text-sm font-medium transition-colors"
-              >
-                更新
-              </button>
+            <div className="px-6 py-4 border-t border-gray-200">
+              <DetailPageActions
+                isEditing={true}
+                pageName="徽章"
+                onEdit={() => {}} // No-op since always in edit mode
+                onSave={handleSave}
+                onCancel={handleCancel}
+                onDelete={() => {}} // No delete functionality for badges
+                isSaving={false}
+                isDeleting={false}
+                disabled={false}
+              />
             </div>
           </div>
         </div>

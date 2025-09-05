@@ -2,72 +2,79 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import CMSLayout from '@/components/CMSLayout';
-import ProtectedRoute from '@/components/ProtectedRoute';
-import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
-import { FiArrowLeft, FiSave, FiEdit, FiEye, FiChevronRight, FiFolder, FiFile, FiTrash2 } from 'react-icons/fi';
+import ProtectedRoute from "@/components/ProtectedRoute"
+import { useSearchParams } from "next/navigation"
 import { getMenuById, updateMenu, deleteMenu, type MenuItem, type UpdateMenuData } from '@/lib/menu-api';
 import Toast from '@/components/Toast';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 import Breadcrumbs from "@/components/Breadcrumbs"
+import DetailPageActions from "@/components/DetailPageActions"
 
-export default function MenuDetailPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = React.use(params);
-  const searchParams = useSearchParams();
-  const mode = searchParams.get('mode') || 'view';
-  
-  const [menu, setMenu] = useState<MenuItem | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isEditing, setIsEditing] = useState(mode === 'edit');
-  const [isSaving, setIsSaving] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; isVisible: boolean }>({
-    message: '',
-    type: 'success',
-    isVisible: false
-  });
+export default function MenuDetailPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
+  const { id } = React.use(params)
+  const searchParams = useSearchParams()
+  const mode = searchParams.get("mode") || "view"
+
+  const [menu, setMenu] = useState<MenuItem | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
+  const [isEditing, setIsEditing] = useState(mode === "edit")
+  const [isSaving, setIsSaving] = useState(false)
+  const [toast, setToast] = useState<{
+    message: string
+    type: "success" | "error"
+    isVisible: boolean
+  }>({
+    message: "",
+    type: "success",
+    isVisible: false,
+  })
 
   // Delete modal state
-  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isDeleting, setIsDeleting] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   // Load menu data
   const loadMenu = useCallback(async () => {
-    if (!id) return;
-    
-    setIsLoading(true);
+    if (!id) return
+
+    setIsLoading(true)
     try {
-      const result = await getMenuById(parseInt(id));
-      
+      const result = await getMenuById(parseInt(id))
+
       if (result.success && result.data) {
-        setMenu(result.data);
+        setMenu(result.data)
       } else {
         setToast({
-          message: result.error || '获取菜单信息失败',
-          type: 'error',
-          isVisible: true
-        });
+          message: result.error || "获取菜单信息失败",
+          type: "error",
+          isVisible: true,
+        })
       }
     } catch (error) {
-      console.error('Error loading menu:', error);
+      console.error("Error loading menu:", error)
       setToast({
-        message: '加载菜单数据失败',
-        type: 'error',
-        isVisible: true
-      });
+        message: "加载菜单数据失败",
+        type: "error",
+        isVisible: true,
+      })
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  }, [id]);
+  }, [id])
 
   // Load data on component mount
   useEffect(() => {
-    loadMenu();
-  }, [loadMenu]);
+    loadMenu()
+  }, [loadMenu])
 
   const handleSave = async () => {
-    if (!menu) return;
-    
-    setIsSaving(true);
+    if (!menu) return
+
+    setIsSaving(true)
     try {
       const updateData: UpdateMenuData = {
         name: menu.name,
@@ -78,88 +85,88 @@ export default function MenuDetailPage({ params }: { params: Promise<{ id: strin
         is_top_level: menu.is_top_level,
         parent_id: menu.parent_id,
         sort: menu.sort,
-        status: menu.status
-      };
+        status: menu.status,
+      }
 
-      const result = await updateMenu(menu.id, updateData);
-      
+      const result = await updateMenu(menu.id, updateData)
+
       if (result.success) {
         setToast({
-          message: '菜单更新成功！',
-          type: 'success',
-          isVisible: true
-        });
-        setIsEditing(false);
+          message: "菜单更新成功！",
+          type: "success",
+          isVisible: true,
+        })
+        setIsEditing(false)
         // Reload data to get any server-side changes
-        loadMenu();
+        loadMenu()
       } else {
         setToast({
-          message: result.error || '更新失败',
-          type: 'error',
-          isVisible: true
-        });
+          message: result.error || "更新失败",
+          type: "error",
+          isVisible: true,
+        })
       }
     } catch (error) {
-      console.error('Error updating menu:', error);
+      console.error("Error updating menu:", error)
       setToast({
-        message: '更新失败，请重试',
-        type: 'error',
-        isVisible: true
-      });
+        message: "更新失败，请重试",
+        type: "error",
+        isVisible: true,
+      })
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
     }
-  };
+  }
 
   const handleCancel = () => {
-    setIsEditing(false);
+    setIsEditing(false)
     // Reload original data
-    loadMenu();
-  };
+    loadMenu()
+  }
 
   const handleDelete = () => {
-    setIsDeleteModalOpen(true);
-  };
+    setIsDeleteModalOpen(true)
+  }
 
   const handleConfirmDelete = async () => {
-    if (!menu) return;
-    
-    setIsDeleting(true);
+    if (!menu) return
+
+    setIsDeleting(true)
     try {
-      const result = await deleteMenu(menu.id);
-      
+      const result = await deleteMenu(menu.id)
+
       if (result.success) {
         setToast({
-          message: '菜单删除成功！',
-          type: 'success',
-          isVisible: true
-        });
+          message: "菜单删除成功！",
+          type: "success",
+          isVisible: true,
+        })
         // Redirect to menu list after successful deletion
-        window.location.href = '/permissions/menus';
+        window.location.href = "/permissions/menus"
       } else {
         setToast({
-          message: result.error || '删除失败',
-          type: 'error',
-          isVisible: true
-        });
+          message: result.error || "删除失败",
+          type: "error",
+          isVisible: true,
+        })
       }
     } catch (error) {
-      console.error('Error deleting menu:', error);
+      console.error("Error deleting menu:", error)
       setToast({
-        message: '删除失败，请重试',
-        type: 'error',
-        isVisible: true
-      });
+        message: "删除失败，请重试",
+        type: "error",
+        isVisible: true,
+      })
     } finally {
-      setIsDeleting(false);
-      setIsDeleteModalOpen(false);
+      setIsDeleting(false)
+      setIsDeleteModalOpen(false)
     }
-  };
+  }
 
   const handleInputChange = (field: keyof MenuItem, value: any) => {
-    if (!menu) return;
-    setMenu(prev => prev ? { ...prev, [field]: value } : null);
-  };
+    if (!menu) return
+    setMenu((prev) => (prev ? { ...prev, [field]: value } : null))
+  }
 
   if (isLoading) {
     return (
@@ -170,7 +177,7 @@ export default function MenuDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </CMSLayout>
       </ProtectedRoute>
-    );
+    )
   }
 
   if (!menu) {
@@ -182,7 +189,7 @@ export default function MenuDetailPage({ params }: { params: Promise<{ id: strin
           </div>
         </CMSLayout>
       </ProtectedRoute>
-    );
+    )
   }
 
   return (
@@ -427,51 +434,18 @@ export default function MenuDetailPage({ params }: { params: Promise<{ id: strin
               </div>
 
               {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
-                {isEditing ? (
-                  <>
-                    <button
-                      onClick={handleDelete}
-                      className="px-4 py-2 text-sm font-medium bg-[#C24C4C] hover:bg-[#7A3636] disabled:bg-gray-400 text-white  rounded-md transition-colors flex items-center gap-2"
-                    >
-                      <FiTrash2 className="w-4 h-4" />
-                      删除
-                    </button>
-                    <button
-                      onClick={handleSave}
-                      disabled={isSaving}
-                      className="px-4 py-2 text-sm font-medium bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
-                    >
-                      {isSaving ? (
-                        <>
-                          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          更新中...
-                        </>
-                      ) : (
-                        <>
-                          <FiSave className="w-4 h-4" />
-                          更新
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      onClick={handleCancel}
-                      disabled={isSaving}
-                      className="px-4 py-2 text-sm font-medium border border-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md transition-colors disabled:opacity-50"
-                    >
-                      取消更新
-                    </button>
-                  </>
-                ) : (
-                  <button
-                    onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 text-sm font-medium text-white bg-[#553C9A] hover:bg-[#4A2F8A]  rounded-md transition-colors flex items-center gap-2"
-                  >
-                    <FiEdit className="w-4 h-4" />
-                    编辑菜单
-                  </button>
-                )}
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <DetailPageActions
+                  isEditing={isEditing}
+                  pageName="菜单"
+                  onEdit={() => setIsEditing(true)}
+                  onSave={handleSave}
+                  onCancel={handleCancel}
+                  onDelete={handleDelete}
+                  isSaving={isSaving}
+                  isDeleting={isDeleting}
+                  disabled={isSaving || isDeleting}
+                />
               </div>
             </div>
           </div>

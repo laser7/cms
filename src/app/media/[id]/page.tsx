@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { FiArrowLeft, FiEdit3, FiSave, FiX, FiTrash2, FiUpload } from 'react-icons/fi';
+import { FiTrash2, FiUpload } from "react-icons/fi"
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Toast from '@/components/Toast';
@@ -10,6 +10,7 @@ import Image from 'next/image';
 import { getMediaById, updateMedia, deleteMedia, deleteMediaImage } from '@/lib/media-api';
 import type { MediaItem, UpdateMediaData } from '@/types';
 import Breadcrumbs from "@/components/Breadcrumbs"
+import DetailPageActions from "@/components/DetailPageActions"
 
 export default function MediaDetailPage({
   params,
@@ -375,47 +376,6 @@ export default function MediaDetailPage({
             ]}
           />
 
-          {/* Page header */}
-          <div className="flex items-center justify-end">
-            <div className="flex items-center space-x-3">
-              {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium bg-[#553C9A] hover:bg-[#4A2F8A] text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8C7E9C]"
-                >
-                  <FiEdit3 className="mr-2" size={16} />
-                  编辑媒体
-                </button>
-              )}
-
-              {isEditing && (
-                <>
-                  <button
-                    onClick={handleDelete}
-                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium bg-[#C24C4C] hover:bg-[#7A3636] disabled:bg-gray-400 text-white focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
-                  >
-                    <FiTrash2 className="mr-2" size={16} />
-                    删除
-                  </button>
-                  <button
-                    onClick={handleSave}
-                    className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-[#8C7E9C] hover:bg-[#7A6B8A] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#8C7E9C]"
-                  >
-                    <FiSave className="mr-2" size={16} />
-                    更新
-                  </button>
-                  <button
-                    onClick={handleCancel}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
-                  >
-                    <FiX className="mr-2" size={16} />
-                    取消更新
-                  </button>
-                </>
-              )}
-            </div>
-          </div>
-
           {/* Media Information */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-4 border-b border-gray-200">
@@ -583,6 +543,18 @@ export default function MediaDetailPage({
               )}
             </div>
           </div>
+
+          {/* Action Buttons */}
+          <DetailPageActions
+            isEditing={isEditing}
+            pageName="媒体"
+            onEdit={() => setIsEditing(true)}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            onDelete={handleDelete}
+            isSaving={isUploading}
+            disabled={isUploading}
+          />
         </div>
         {/* Toast Notifications */}
         <Toast

@@ -1,22 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from "react"
-import Link from "next/link"
 import { useSearchParams } from "next/navigation"
-import {
-  FiSearch,
-  FiChevronLeft,
-  FiSave,
-  FiEdit,
-  FiTrash2,
-} from "react-icons/fi"
 import CMSLayout from "@/components/CMSLayout"
 import ProtectedRoute from "@/components/ProtectedRoute"
 import {
   getRoleById,
   updateRole,
   deleteRole,
-  getMenuTree,
   getRoleAdmin,
   updateRoleAdmin,
   type RoleItem,
@@ -28,6 +19,7 @@ import { getUsersList } from "@/lib/users-api"
 import Toast from "@/components/Toast"
 import DeleteConfirmModal from "@/components/DeleteConfirmModal"
 import Breadcrumbs from "@/components/Breadcrumbs"
+import DetailPageActions from "@/components/DetailPageActions"
 
 export default function RoleDetailPage({
   params,
@@ -486,18 +478,6 @@ export default function RoleDetailPage({
               </h1>
               {role && (
                 <p className="text-sm text-gray-600 mt-1">{role.name}</p>
-              )}
-            </div>
-
-            <div className="flex items-center space-x-3">
-              {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 text-sm font-medium bg-[#553C9A] hover:bg-[#4A2F8A] text-white rounded-md transition-colors flex items-center gap-2"
-                >
-                  <FiEdit className="w-4 h-4" />
-                  编辑角色
-                </button>
               )}
             </div>
           </div>
@@ -995,43 +975,17 @@ export default function RoleDetailPage({
           </div>
 
           {/* Action Buttons */}
-          <div className="flex justify-end space-x-3 mt-6">
-            {isEditing ? (
-              <>
-                <button
-                  onClick={handleDelete}
-                  className="px-4 py-2 text-sm font-medium bg-[#C24C4C] hover:bg-[#7A3636] disabled:bg-gray-400 text-white rounded-md transition-colors flex items-center gap-2"
-                >
-                  <FiTrash2 className="w-4 h-4" />
-                  删除
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="px-4 py-2 text-sm font-medium bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
-                >
-                  {isSaving ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      更新中...
-                    </>
-                  ) : (
-                    <>
-                      <FiSave className="w-4 h-4" />
-                      更新
-                    </>
-                  )}
-                </button>
-                <button
-                  onClick={handleCancel}
-                  disabled={isSaving}
-                  className="px-4 py-2 text-sm font-medium border border-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md transition-colors disabled:opacity-50"
-                >
-                  取消更新
-                </button>
-              </>
-            ) : null}
-          </div>
+          <DetailPageActions
+            isEditing={isEditing}
+            pageName="角色"
+            onEdit={() => setIsEditing(true)}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            onDelete={handleDelete}
+            isSaving={isSaving}
+            isDeleting={isDeleting}
+            disabled={isSaving || isDeleting}
+          />
         </div>
 
         {/* Toast notification */}

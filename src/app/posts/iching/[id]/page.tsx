@@ -5,9 +5,13 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import Image from 'next/image';
-import { getYijingContentById, deleteYijingContent, YijingContent } from '@/lib/yijing-api';
-import { FiTrash2 } from 'react-icons/fi';
+import {
+  getYijingContentById,
+  deleteYijingContent,
+  YijingContent,
+} from "@/lib/yijing-api"
 import Breadcrumbs from '@/components/Breadcrumbs';
+import DetailPageActions from "@/components/DetailPageActions"
 
 interface IChingArticle {
   id: string;
@@ -177,35 +181,18 @@ export default function IChingArticleDetailPage() {
           {/* Breadcrumbs */}
           <Breadcrumbs
             items={[
-              { label: '易经管理', href: '/posts/iching' },
-              { label: article?.title || '文章详情' }
+              { label: "易经管理", href: "/posts/iching" },
+              { label: article?.title || "文章详情" },
             ]}
           />
-
-          {/* Page header */}
-          <div className="flex items-end justify-end">
-            
-            {mode === 'view' && (
-              <button
-                onClick={handleEdit}
-                                  className="bg-[#553C9A] hover:bg-[#4A2F8A] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
-              >
-                编辑文章
-              </button>
-            )}
-          </div>
 
           {/* Error message */}
           {error && (
             <div className="bg-red-50 border border-red-200 rounded-md p-4">
               <div className="flex">
                 <div className="ml-3">
-                  <h3 className="text-sm font-medium text-red-800">
-                    加载失败
-                  </h3>
-                  <div className="mt-2 text-sm text-red-700">
-                    {error}
-                  </div>
+                  <h3 className="text-sm font-medium text-red-800">加载失败</h3>
+                  <div className="mt-2 text-sm text-red-700">{error}</div>
                 </div>
               </div>
             </div>
@@ -261,21 +248,24 @@ export default function IChingArticleDetailPage() {
               <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
                 文章内容
               </h3>
-              
+
               <div className="space-y-6">
                 {/* Title */}
                 <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="title"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     标题
                   </label>
                   <input
                     type="text"
                     id="title"
                     value={formData.title}
-                    onChange={(e) => handleInputChange('title', e.target.value)}
-                    disabled={mode === 'view'}
+                    onChange={(e) => handleInputChange("title", e.target.value)}
+                    disabled={mode === "view"}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
+                      mode === "view" ? "bg-gray-50 text-gray-500" : "bg-white"
                     }`}
                     placeholder="输入文章标题..."
                   />
@@ -283,17 +273,22 @@ export default function IChingArticleDetailPage() {
 
                 {/* Description */}
                 <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="description"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     描述
                   </label>
                   <input
                     type="text"
                     id="description"
                     value={formData.description}
-                    onChange={(e) => handleInputChange('description', e.target.value)}
-                    disabled={mode === 'view'}
+                    onChange={(e) =>
+                      handleInputChange("description", e.target.value)
+                    }
+                    disabled={mode === "view"}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
+                      mode === "view" ? "bg-gray-50 text-gray-500" : "bg-white"
                     }`}
                     placeholder="输入文章描述..."
                   />
@@ -314,7 +309,7 @@ export default function IChingArticleDetailPage() {
                         className="object-cover"
                       />
                     </div>
-                    {mode === 'edit' && (
+                    {mode === "edit" && (
                       <button className="text-purple-600 hover:text-purple-700 text-sm font-medium">
                         更换图片
                       </button>
@@ -324,17 +319,22 @@ export default function IChingArticleDetailPage() {
 
                 {/* Content */}
                 <div>
-                  <label htmlFor="content" className="block text-sm font-medium text-gray-700 mb-2">
+                  <label
+                    htmlFor="content"
+                    className="block text-sm font-medium text-gray-700 mb-2"
+                  >
                     内容
                   </label>
                   <textarea
                     id="content"
                     rows={12}
                     value={formData.content}
-                    onChange={(e) => handleInputChange('content', e.target.value)}
-                    disabled={mode === 'view'}
+                    onChange={(e) =>
+                      handleInputChange("content", e.target.value)
+                    }
+                    disabled={mode === "view"}
                     className={`w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none ${
-                      mode === 'view' ? 'bg-gray-50 text-gray-500' : 'bg-white'
+                      mode === "view" ? "bg-gray-50 text-gray-500" : "bg-white"
                     }`}
                     placeholder="输入文章内容..."
                   />
@@ -343,39 +343,20 @@ export default function IChingArticleDetailPage() {
             </div>
           </div>
 
-          {/* Action Buttons - Only show in edit mode */}
-          {mode === 'edit' && (
-            <div className="flex justify-between items-center">
-              <button
-                onClick={confirmDelete}
-                disabled={isDeleting}
-                                  className="px-4 py-2 bg-[#C24C4C] hover:bg-[#7A3636] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
-              >
-                <FiTrash2 size={16} />
-                <span>{isDeleting ? '删除中...' : '删除文章'}</span>
-              </button>
-              
-              <div className="flex space-x-3">
-                <button
-                  onClick={handleCancel}
-                  className="px-4 py-2 border border-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md text-sm font-medium transition-colors"
-                >
-                  取消更新
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="px-4 py-2 bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md text-sm font-medium transition-colors"
-                >
-                  {isSaving ? '保存中...' : '更新'}
-                </button>
-              </div>
-            </div>
-          )}
-
-
+          {/* Action Buttons */}
+          <DetailPageActions
+            isEditing={mode === "edit"}
+            pageName="文章"
+            onEdit={handleEdit}
+            onSave={handleSave}
+            onCancel={handleCancel}
+            onDelete={confirmDelete}
+            isSaving={isSaving}
+            isDeleting={isDeleting}
+            disabled={isSaving || isDeleting}
+          />
         </div>
       </CMSLayout>
     </ProtectedRoute>
-  );
+  )
 }
