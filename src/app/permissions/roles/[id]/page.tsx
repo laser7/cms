@@ -27,6 +27,7 @@ import {
 import { getUsersList } from "@/lib/users-api"
 import Toast from "@/components/Toast"
 import DeleteConfirmModal from "@/components/DeleteConfirmModal"
+import Breadcrumbs from "@/components/Breadcrumbs"
 
 export default function RoleDetailPage({
   params,
@@ -468,21 +469,14 @@ export default function RoleDetailPage({
     <ProtectedRoute>
       <CMSLayout>
         <div className="space-y-6">
-          {/* Page header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4">
-              <Link
-                href="/permissions/roles"
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <FiChevronLeft className="w-4 h-4" />
-                <span className="text-sm">返回列表</span>
-              </Link>
-              <h1 className="text-xl font-bold text-gray-900">
-                {isEditing ? "编辑角色" : "角色详情"}
-              </h1>
-            </div>
-          </div>
+          {/* Breadcrumbs */}
+          <Breadcrumbs
+            items={[
+              { label: "权限管理", href: "/permissions" },
+              { label: "角色管理", href: "/permissions/roles" },
+              { label: role?.name || "角色详情" },
+            ]}
+          />
 
           {/* Basic Information */}
           <div className="bg-white shadow rounded-lg">

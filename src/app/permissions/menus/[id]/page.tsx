@@ -9,6 +9,7 @@ import { FiArrowLeft, FiSave, FiEdit, FiEye, FiChevronRight, FiFolder, FiFile, F
 import { getMenuById, updateMenu, deleteMenu, type MenuItem, type UpdateMenuData } from '@/lib/menu-api';
 import Toast from '@/components/Toast';
 import DeleteConfirmModal from '@/components/DeleteConfirmModal';
+import Breadcrumbs from "@/components/Breadcrumbs"
 
 export default function MenuDetailPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = React.use(params);
@@ -188,21 +189,14 @@ export default function MenuDetailPage({ params }: { params: Promise<{ id: strin
     <ProtectedRoute>
       <CMSLayout>
         <div className="space-y-6">
-          {/* Page header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-y-4 flex-col">
-              <Link
-                href="/permissions/menus"
-                className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 transition-colors"
-              >
-                <FiArrowLeft className="w-4 h-4" />
-                <span className="text-sm">返回列表</span>
-              </Link>
-              <h1 className="text-xl font-bold text-gray-900">
-                {isEditing ? '编辑菜单' : '菜单详情'}
-              </h1>
-            </div>
-          </div>
+          {/* Breadcrumbs */}
+          <Breadcrumbs
+            items={[
+              { label: "权限管理", href: "/permissions" },
+              { label: "菜单管理", href: "/permissions/menus" },
+              { label: menu?.name || "菜单详情" },
+            ]}
+          />
 
           {/* Menu Information */}
           <div className="bg-white shadow rounded-lg">
@@ -211,61 +205,85 @@ export default function MenuDetailPage({ params }: { params: Promise<{ id: strin
                 {/* ID */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
                   <span className="text-sm font-medium text-gray-600">ID:</span>
-                  <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">{menu.id}</span>
+                  <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">
+                    {menu.id}
+                  </span>
                 </div>
-                
+
                 {/* Name */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">名称:</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    名称:
+                  </span>
                   {isEditing ? (
                     <input
                       type="text"
                       value={menu.name}
-                      onChange={(e) => handleInputChange('name', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("name", e.target.value)
+                      }
                       className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   ) : (
-                    <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">{menu.name}</span>
+                    <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">
+                      {menu.name}
+                    </span>
                   )}
                 </div>
-                
+
                 {/* Code */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">代码:</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    代码:
+                  </span>
                   {isEditing ? (
                     <input
                       type="text"
                       value={menu.code}
-                      onChange={(e) => handleInputChange('code', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("code", e.target.value)
+                      }
                       className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   ) : (
-                    <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">{menu.code}</span>
+                    <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">
+                      {menu.code}
+                    </span>
                   )}
                 </div>
-                
+
                 {/* Route */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">路由:</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    路由:
+                  </span>
                   {isEditing ? (
                     <input
                       type="text"
                       value={menu.route}
-                      onChange={(e) => handleInputChange('route', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("route", e.target.value)
+                      }
                       className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   ) : (
-                    <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">{menu.route}</span>
+                    <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">
+                      {menu.route}
+                    </span>
                   )}
                 </div>
-                
+
                 {/* Type */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">类型:</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    类型:
+                  </span>
                   {isEditing ? (
                     <select
                       value={menu.type}
-                      onChange={(e) => handleInputChange('type', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("type", e.target.value)
+                      }
                       className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
                       <option value="页面">页面</option>
@@ -273,32 +291,47 @@ export default function MenuDetailPage({ params }: { params: Promise<{ id: strin
                       <option value="菜单">菜单</option>
                     </select>
                   ) : (
-                    <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">{menu.type}</span>
+                    <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">
+                      {menu.type}
+                    </span>
                   )}
                 </div>
 
                 {/* Icon */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">图标:</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    图标:
+                  </span>
                   {isEditing ? (
                     <input
                       type="text"
                       value={menu.icon}
-                      onChange={(e) => handleInputChange('icon', e.target.value)}
+                      onChange={(e) =>
+                        handleInputChange("icon", e.target.value)
+                      }
                       className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                     />
                   ) : (
-                    <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">{menu.icon || '-'}</span>
+                    <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">
+                      {menu.icon || "-"}
+                    </span>
                   )}
                 </div>
 
                 {/* Is Top Level */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">顶级菜单:</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    顶级菜单:
+                  </span>
                   {isEditing ? (
                     <select
-                      value={menu.is_top_level ? 'true' : 'false'}
-                      onChange={(e) => handleInputChange('is_top_level', e.target.value === 'true')}
+                      value={menu.is_top_level ? "true" : "false"}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "is_top_level",
+                          e.target.value === "true"
+                        )
+                      }
                       className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                     >
                       <option value="true">是</option>
@@ -306,72 +339,93 @@ export default function MenuDetailPage({ params }: { params: Promise<{ id: strin
                     </select>
                   ) : (
                     <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">
-                      {menu.is_top_level ? '是' : '否'}
+                      {menu.is_top_level ? "是" : "否"}
                     </span>
                   )}
                 </div>
 
                 {/* Parent ID */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">父菜单ID:</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    父菜单ID:
+                  </span>
                   {isEditing ? (
                     <input
                       type="number"
-                      value={menu.parent_id || ''}
-                      onChange={(e) => handleInputChange('parent_id', e.target.value ? parseInt(e.target.value) : 0)}
+                      value={menu.parent_id || ""}
+                      onChange={(e) =>
+                        handleInputChange(
+                          "parent_id",
+                          e.target.value ? parseInt(e.target.value) : 0
+                        )
+                      }
                       className="text-sm text-gray-900 bg-white border border-gray-300 px-3 py-1 rounded focus:outline-none focus:ring-2 focus:ring-purple-500"
                       min="0"
                     />
                   ) : (
                     <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">
-                      {menu.parent_id || '-'}
+                      {menu.parent_id || "-"}
                     </span>
                   )}
                 </div>
 
                 {/* Parent Name */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">父菜单名称:</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    父菜单名称:
+                  </span>
                   <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">
-                    {menu.parent_name || '-'}
+                    {menu.parent_name || "-"}
                   </span>
                 </div>
 
                 {/* Sort */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">排序:</span>
-                  <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">{menu.sort}</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    排序:
+                  </span>
+                  <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">
+                    {menu.sort}
+                  </span>
                 </div>
 
                 {/* Status */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">状态:</span>
-                  <span className={`text-sm px-3 py-1 rounded ${
-                    menu.status === 1 
-                      ? 'bg-green-100 text-green-800' 
-                      : 'bg-red-100 text-red-800'
-                  }`}>
-                    {menu.status === 1 ? '启用' : '禁用'}
+                  <span className="text-sm font-medium text-gray-600">
+                    状态:
+                  </span>
+                  <span
+                    className={`text-sm px-3 py-1 rounded ${
+                      menu.status === 1
+                        ? "bg-green-100 text-green-800"
+                        : "bg-red-100 text-red-800"
+                    }`}
+                  >
+                    {menu.status === 1 ? "启用" : "禁用"}
                   </span>
                 </div>
-                
+
                 {/* Created At */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">创建时间:</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    创建时间:
+                  </span>
                   <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">
-                    {new Date(menu.created_at).toLocaleString('zh-CN')}
+                    {new Date(menu.created_at).toLocaleString("zh-CN")}
                   </span>
                 </div>
-                
+
                 {/* Updated At */}
                 <div className="flex justify-between items-center py-3 border-b border-gray-100">
-                  <span className="text-sm font-medium text-gray-600">更新时间:</span>
+                  <span className="text-sm font-medium text-gray-600">
+                    更新时间:
+                  </span>
                   <span className="text-sm text-gray-900 bg-gray-50 px-3 py-1 rounded">
-                    {new Date(menu.updated_at).toLocaleString('zh-CN')}
+                    {new Date(menu.updated_at).toLocaleString("zh-CN")}
                   </span>
                 </div>
               </div>
-              
+
               {/* Action Buttons */}
               <div className="flex justify-end space-x-3 mt-8 pt-6 border-t border-gray-200">
                 {isEditing ? (
@@ -383,7 +437,7 @@ export default function MenuDetailPage({ params }: { params: Promise<{ id: strin
                     >
                       取消
                     </button>
-                    <button 
+                    <button
                       onClick={handleSave}
                       disabled={isSaving}
                       className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
@@ -420,8 +474,6 @@ export default function MenuDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </div>
           </div>
-
-
         </div>
 
         {/* Toast notification */}
@@ -429,7 +481,7 @@ export default function MenuDetailPage({ params }: { params: Promise<{ id: strin
           message={toast.message}
           type={toast.type}
           isVisible={toast.isVisible}
-          onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+          onClose={() => setToast((prev) => ({ ...prev, isVisible: false }))}
         />
 
         {/* Delete Confirmation Modal */}
@@ -439,9 +491,9 @@ export default function MenuDetailPage({ params }: { params: Promise<{ id: strin
           onConfirm={handleConfirmDelete}
           title="删除菜单"
           message="确定要删除这个菜单项吗？此操作无法撤销。"
-          itemName={menu?.name || ''}
+          itemName={menu?.name || ""}
         />
       </CMSLayout>
     </ProtectedRoute>
-  );
+  )
 }
