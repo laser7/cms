@@ -431,46 +431,47 @@ export default function MenuDetailPage({ params }: { params: Promise<{ id: strin
                 {isEditing ? (
                   <>
                     <button
-                      onClick={handleCancel}
-                      disabled={isSaving}
-                      className="px-4 py-2 text-sm font-medium border-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md transition-colors disabled:opacity-50"
+                      onClick={handleDelete}
+                      className="px-4 py-2 text-sm font-medium bg-[#C24C4C] hover:bg-[#7A3636] disabled:bg-gray-400 text-white  rounded-md transition-colors flex items-center gap-2"
                     >
-                      取消
+                      <FiTrash2 className="w-4 h-4" />
+                      删除
                     </button>
                     <button
                       onClick={handleSave}
                       disabled={isSaving}
-                      className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
+                      className="px-4 py-2 text-sm font-medium bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
                     >
                       {isSaving ? (
                         <>
                           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                          保存中...
+                          更新中...
                         </>
                       ) : (
                         <>
                           <FiSave className="w-4 h-4" />
-                          保存
+                          更新
                         </>
                       )}
+                    </button>
+
+                    <button
+                      onClick={handleCancel}
+                      disabled={isSaving}
+                      className="px-4 py-2 text-sm font-medium border border-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md transition-colors disabled:opacity-50"
+                    >
+                      取消更新
                     </button>
                   </>
                 ) : (
                   <button
                     onClick={() => setIsEditing(true)}
-                    className="px-4 py-2 text-sm font-medium text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 rounded-md transition-colors flex items-center gap-2"
+                    className="px-4 py-2 text-sm font-medium text-white bg-[#553C9A] hover:bg-[#4A2F8A]  rounded-md transition-colors flex items-center gap-2"
                   >
                     <FiEdit className="w-4 h-4" />
-                    编辑
+                    编辑菜单
                   </button>
                 )}
-                <button
-                  onClick={handleDelete}
-                  className="px-4 py-2 text-sm font-medium text-red-600 bg-white hover:bg-red-50 rounded-md transition-colors flex items-center gap-2"
-                >
-                  <FiTrash2 className="w-4 h-4" />
-                  删除
-                </button>
               </div>
             </div>
           </div>

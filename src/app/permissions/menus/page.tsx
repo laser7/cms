@@ -175,7 +175,7 @@ export default function MenuManagementPage() {
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center space-x-4">
                 <div className="relative">
-                  <select 
+                  <select
                     className="appearance-none bg-white border border-gray-300 rounded-md px-3 py-2 pr-8 text-sm focus:outline-none focus:ring-2 focus:ring-purple-500"
                     value={selectedType}
                     onChange={(e) => handleTypeFilter(e.target.value)}
@@ -195,20 +195,13 @@ export default function MenuManagementPage() {
                     placeholder="搜索菜单..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSearch()}
+                    onKeyPress={(e) => e.key === "Enter" && handleSearch()}
                     className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-64"
                   />
                 </div>
-
-                <button 
-                  onClick={handleSearch}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                >
-                  搜索
-                </button>
               </div>
 
-              <button 
+              <button
                 onClick={handleCreateNew}
                 className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium flex items-center gap-2"
               >
@@ -225,7 +218,10 @@ export default function MenuManagementPage() {
                     <th className="px-6 py-3 text-left">
                       <input
                         type="checkbox"
-                        checked={selectedItems.length === menuItems?.length && menuItems?.length > 0}
+                        checked={
+                          selectedItems.length === menuItems?.length &&
+                          menuItems?.length > 0
+                        }
                         onChange={(e) => handleSelectAll(e.target.checked)}
                         className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                       />
@@ -262,13 +258,19 @@ export default function MenuManagementPage() {
                 <tbody className="bg-white divide-y divide-gray-200">
                   {isLoading ? (
                     <tr>
-                      <td colSpan={10} className="px-6 py-4 text-center text-gray-500">
+                      <td
+                        colSpan={10}
+                        className="px-6 py-4 text-center text-gray-500"
+                      >
                         加载中...
                       </td>
                     </tr>
                   ) : menuItems?.length === 0 ? (
                     <tr>
-                      <td colSpan={10} className="px-6 py-4 text-center text-gray-500">
+                      <td
+                        colSpan={10}
+                        className="px-6 py-4 text-center text-gray-500"
+                      >
                         暂无数据
                       </td>
                     </tr>
@@ -279,7 +281,9 @@ export default function MenuManagementPage() {
                           <input
                             type="checkbox"
                             checked={selectedItems.includes(item.id)}
-                            onChange={(e) => handleSelectItem(item.id, e.target.checked)}
+                            onChange={(e) =>
+                              handleSelectItem(item.id, e.target.checked)
+                            }
                             className="rounded border-gray-300 text-purple-600 focus:ring-purple-500"
                           />
                         </td>
@@ -299,39 +303,41 @@ export default function MenuManagementPage() {
                           {item.type}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          <span className={`px-2 py-1 rounded-full text-xs ${
-                            item.is_top_level 
-                              ? 'bg-green-100 text-green-800' 
-                              : 'bg-gray-100 text-gray-800'
-                          }`}>
-                            {item.is_top_level ? '是' : '否'}
+                          <span
+                            className={`px-2 py-1 rounded-full text-xs ${
+                              item.is_top_level
+                                ? "bg-green-100 text-green-800"
+                                : "bg-gray-100 text-gray-800"
+                            }`}
+                          >
+                            {item.is_top_level ? "是" : "否"}
                           </span>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {item.parent_name || '-'}
+                          {item.parent_name || "-"}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                          {new Date(item.created_at).toLocaleString('zh-CN')}
+                          {new Date(item.created_at).toLocaleString("zh-CN")}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={() => handleDelete(item)}
-                              className="text-red-600 hover:text-red-900"
+                              className="text-red-500 hover:text-red-900"
                               title="删除"
                             >
                               <FiTrash2 className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleViewDetails(item)}
-                              className="text-blue-600 hover:text-blue-900"
+                              className="text-gray-400 hover:text-blue-900"
                               title="查看"
                             >
                               <FiEye className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleEdit(item)}
-                              className="text-green-600 hover:text-green-900"
+                              className="text-gray-400 hover:text-green-900"
                               title="编辑"
                             >
                               <FiEdit className="w-4 h-4" />
@@ -365,30 +371,32 @@ export default function MenuManagementPage() {
 
               <div className="flex items-center space-x-2">
                 <button
-                  onClick={() => setCurrentPage(prev => Math.max(1, prev - 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
                   disabled={currentPage === 1}
                   className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                 >
                   <FiChevronLeft className="w-4 h-4" />
                 </button>
-                
+
                 {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                  const pageNum = i + 1;
+                  const pageNum = i + 1
                   return (
                     <button
                       key={pageNum}
                       onClick={() => setCurrentPage(pageNum)}
                       className={`px-3 py-1 text-sm rounded ${
                         currentPage === pageNum
-                          ? 'bg-pink-500 text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
+                          ? "bg-[#8C7E9C] text-white"
+                          : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
                       {pageNum}
                     </button>
-                  );
+                  )
                 })}
-                
+
                 {totalPages > 5 && (
                   <>
                     <span className="text-gray-500">...</span>
@@ -396,17 +404,19 @@ export default function MenuManagementPage() {
                       onClick={() => setCurrentPage(totalPages)}
                       className={`px-3 py-1 text-sm rounded ${
                         currentPage === totalPages
-                          ? 'bg-pink-500 text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
+                          ? "bg-[#8C7E9C] text-white"
+                          : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
                       {totalPages}
                     </button>
                   </>
                 )}
-                
+
                 <button
-                  onClick={() => setCurrentPage(prev => Math.min(totalPages, prev + 1))}
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
                   disabled={currentPage === totalPages}
                   className="p-1 text-gray-400 hover:text-gray-600 disabled:opacity-50"
                 >
@@ -422,7 +432,7 @@ export default function MenuManagementPage() {
           message={toast.message}
           type={toast.type}
           isVisible={toast.isVisible}
-          onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+          onClose={() => setToast((prev) => ({ ...prev, isVisible: false }))}
         />
 
         {/* Create/Edit Menu Modal */}
@@ -441,9 +451,9 @@ export default function MenuManagementPage() {
           onConfirm={handleConfirmDelete}
           title="删除菜单"
           message="确定要删除这个菜单项吗？此操作无法撤销。"
-          itemName={menuToDelete?.name || ''}
+          itemName={menuToDelete?.name || ""}
         />
       </CMSLayout>
     </ProtectedRoute>
-  );
+  )
 }

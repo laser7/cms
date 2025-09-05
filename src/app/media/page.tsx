@@ -200,7 +200,9 @@ export default function MediaPage() {
                   <div className="flex items-center space-x-2">
                     <input
                       type="checkbox"
-                      checked={selectedRows.size === media?.length && media?.length > 0}
+                      checked={
+                        selectedRows.size === media?.length && media?.length > 0
+                      }
                       onChange={(e) => handleSelectAll(e.target.checked)}
                       className="rounded border-gray-300 text-[#8C7E9C] focus:ring-[#8C7E9C]"
                     />
@@ -208,7 +210,7 @@ export default function MediaPage() {
                       选择列
                     </button>
                   </div>
-                  
+
                   {/* Page type filter */}
                   <select
                     value={pageType}
@@ -222,10 +224,13 @@ export default function MediaPage() {
                     <option value="other">other</option>
                   </select>
                 </div>
-                
+
                 <div className="flex items-center space-x-4">
                   <div className="relative">
-                    <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                    <FiSearch
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      size={16}
+                    />
                     <input
                       type="text"
                       placeholder="搜索媒体..."
@@ -234,7 +239,7 @@ export default function MediaPage() {
                       className="w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent"
                     />
                   </div>
-                  <button 
+                  <button
                     onClick={handleCreateMedia}
                     className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
                   >
@@ -280,7 +285,10 @@ export default function MediaPage() {
                   <tbody className="bg-white divide-y divide-gray-200">
                     {filteredMedia?.length === 0 ? (
                       <tr>
-                        <td colSpan={6} className="px-6 py-12 text-center text-gray-500">
+                        <td
+                          colSpan={6}
+                          className="px-6 py-12 text-center text-gray-500"
+                        >
                           暂无媒体数据
                         </td>
                       </tr>
@@ -300,17 +308,19 @@ export default function MediaPage() {
                             <div className="flex space-x-1">
                               {item.images && item.images.length > 0 ? (
                                 <>
-                                  {item.images.slice(0, 4).map((imageUrl, index) => (
-                                    <div key={index} className="relative">
-                                      <Image
-                                        src={imageUrl}
-                                        alt={`Image ${index + 1}`}
-                                        width={60}
-                                        height={60}
-                                        className="rounded-md object-cover"
-                                      />
-                                    </div>
-                                  ))}
+                                  {item.images
+                                    .slice(0, 4)
+                                    .map((imageUrl, index) => (
+                                      <div key={index} className="relative">
+                                        <Image
+                                          src={imageUrl}
+                                          alt={`Image ${index + 1}`}
+                                          width={60}
+                                          height={60}
+                                          className="rounded-md object-cover"
+                                        />
+                                      </div>
+                                    ))}
                                   {item.images.length > 4 && (
                                     <div className="flex items-center justify-center w-[60px] h-[60px] bg-gray-100 rounded-md text-xs text-gray-500">
                                       +{item.images.length - 4}
@@ -325,11 +335,13 @@ export default function MediaPage() {
                             </div>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                            {new Date(item.created_at).toLocaleDateString('zh-CN')}
+                            {new Date(item.created_at).toLocaleDateString(
+                              "zh-CN"
+                            )}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
                             <div className="flex items-center space-x-2">
-                              <button 
+                              <button
                                 onClick={() => handleViewMedia(item.id)}
                                 className="text-gray-400 hover:text-gray-600 p-1"
                                 title="查看"
@@ -338,14 +350,14 @@ export default function MediaPage() {
                               </button>
                               <button
                                 onClick={() => handleEditMedia(item)}
-                                className="text-green-600 hover:text-green-900"
+                                className="text-gray-400 hover:text-green-900"
                                 title="编辑"
                               >
                                 <FiEdit className="w-4 h-4" />
                               </button>
-                              <button 
+                              <button
                                 onClick={() => handleDeleteMedia(item)}
-                                className="text-red-400 hover:text-red-600 p-1"
+                                className="text-gray-400 hover:text-red-600 p-1"
                                 title="删除"
                               >
                                 <FiTrash2 size={16} />
@@ -366,16 +378,16 @@ export default function MediaPage() {
             <div className="bg-white shadow rounded-lg">
               <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
                 <div className="flex items-center space-x-2">
-                  <button 
+                  <button
                     onClick={() => handlePageChange(currentPage - 1)}
                     disabled={currentPage === 1}
                     className="text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     ←
                   </button>
-                  
+
                   {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
-                    const page = i + 1;
+                    const page = i + 1
                     if (totalPages <= 5) {
                       return (
                         <button
@@ -383,18 +395,18 @@ export default function MediaPage() {
                           onClick={() => handlePageChange(page)}
                           className={`px-3 py-1 text-sm font-medium rounded ${
                             currentPage === page
-                              ? 'text-white bg-[#8C7E9C]'
-                              : 'text-gray-700 hover:text-gray-900'
+                              ? "text-white bg-[#8C7E9C]"
+                              : "text-gray-700 hover:text-gray-900"
                           }`}
                         >
                           {page}
                         </button>
-                      );
+                      )
                     }
-                    return null;
+                    return null
                   })}
-                  
-                  <button 
+
+                  <button
                     onClick={() => handlePageChange(currentPage + 1)}
                     disabled={currentPage === totalPages}
                     className="text-gray-400 hover:text-gray-600 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -402,12 +414,14 @@ export default function MediaPage() {
                     →
                   </button>
                 </div>
-                
+
                 <div className="flex items-center space-x-2">
                   <span className="text-sm text-gray-700">显示</span>
-                  <select 
+                  <select
                     value={pageSize}
-                    onChange={(e) => handlePageSizeChange(Number(e.target.value))}
+                    onChange={(e) =>
+                      handlePageSizeChange(Number(e.target.value))
+                    }
                     className="text-sm border border-gray-300 rounded px-2 py-1"
                   >
                     <option value={10}>10行</option>
@@ -428,8 +442,8 @@ export default function MediaPage() {
           isOpen={isCreateModalOpen}
           onClose={() => setIsCreateModalOpen(false)}
           onSubmit={async (data) => {
-            const result = await handleSubmitMedia(data);
-            return result || null;
+            const result = await handleSubmitMedia(data)
+            return result || null
           }}
           mode="create"
         />
@@ -437,13 +451,13 @@ export default function MediaPage() {
         <DeleteConfirmModal
           isOpen={isDeleteModalOpen}
           onClose={() => {
-            setIsDeleteModalOpen(false);
-            setDeletingMedia(null);
+            setIsDeleteModalOpen(false)
+            setDeletingMedia(null)
           }}
           onConfirm={handleConfirmDelete}
           title="删除媒体"
           message="您确定要删除这个媒体项吗？此操作无法撤销。"
-          itemName={deletingMedia?.name || ''}
+          itemName={deletingMedia?.name || ""}
         />
 
         {/* Toast Notifications */}
@@ -451,9 +465,9 @@ export default function MediaPage() {
           message={toast.message}
           type={toast.type}
           isVisible={toast.isVisible}
-          onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+          onClose={() => setToast((prev) => ({ ...prev, isVisible: false }))}
         />
       </CMSLayout>
     </ProtectedRoute>
-  );
+  )
 } 

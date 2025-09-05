@@ -478,6 +478,30 @@ export default function RoleDetailPage({
             ]}
           />
 
+          {/* Page header with edit button */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-2xl font-bold text-gray-900">
+                {isEditing ? "编辑角色" : "角色详情"}
+              </h1>
+              {role && (
+                <p className="text-sm text-gray-600 mt-1">{role.name}</p>
+              )}
+            </div>
+
+            <div className="flex items-center space-x-3">
+              {!isEditing && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="px-4 py-2 text-sm font-medium bg-[#553C9A] hover:bg-[#4A2F8A] text-white rounded-md transition-colors flex items-center gap-2"
+                >
+                  <FiEdit className="w-4 h-4" />
+                  编辑角色
+                </button>
+              )}
+            </div>
+          </div>
+
           {/* Basic Information */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-6 py-6">
@@ -975,49 +999,38 @@ export default function RoleDetailPage({
             {isEditing ? (
               <>
                 <button
-                  onClick={handleCancel}
-                  disabled={isSaving}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-50"
-                >
-                  取消
-                </button>
-                <button
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="px-4 py-2 text-sm font-medium text-white bg-pink-500 hover:bg-pink-600 rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
-                >
-                  {isSaving ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      保存中...
-                    </>
-                  ) : (
-                    <>
-                      <FiSave className="w-4 h-4" />
-                      保存
-                    </>
-                  )}
-                </button>
-              </>
-            ) : (
-              <>
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md transition-colors flex items-center gap-2"
-                >
-                  <FiEdit className="w-4 h-4" />
-                  编辑
-                </button>
-
-                <button
                   onClick={handleDelete}
-                  className="px-4 py-2 text-sm font-medium text-red-600 bg-white hover:bg-red-50 border border-red-200 rounded-md transition-colors flex items-center gap-2"
+                  className="px-4 py-2 text-sm font-medium bg-[#C24C4C] hover:bg-[#7A3636] disabled:bg-gray-400 text-white rounded-md transition-colors flex items-center gap-2"
                 >
                   <FiTrash2 className="w-4 h-4" />
                   删除
                 </button>
+                <button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="px-4 py-2 text-sm font-medium bg-[#8C7E9C] hover:bg-[#7A6B8A] disabled:bg-gray-400 text-white rounded-md transition-colors disabled:opacity-50 flex items-center gap-2"
+                >
+                  {isSaving ? (
+                    <>
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                      更新中...
+                    </>
+                  ) : (
+                    <>
+                      <FiSave className="w-4 h-4" />
+                      更新
+                    </>
+                  )}
+                </button>
+                <button
+                  onClick={handleCancel}
+                  disabled={isSaving}
+                  className="px-4 py-2 text-sm font-medium border border-[#553C9A] text-[#553C9A] bg-white hover:bg-[#553C9A] hover:text-white rounded-md transition-colors disabled:opacity-50"
+                >
+                  取消更新
+                </button>
               </>
-            )}
+            ) : null}
           </div>
         </div>
 

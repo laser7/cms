@@ -222,13 +222,6 @@ export default function RoleManagementPage() {
                     className="pl-10 pr-4 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-purple-500 w-64"
                   />
                 </div>
-
-                <button
-                  onClick={handleSearch}
-                  className="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-md text-sm font-medium"
-                >
-                  搜索
-                </button>
               </div>
 
               <button
@@ -350,14 +343,14 @@ export default function RoleManagementPage() {
                             </button>
                             <button
                               onClick={() => handleViewRole(role?.id)}
-                              className="text-blue-600 hover:text-blue-900"
+                              className="text-gray-400 hover:text-blue-900"
                               title="查看"
                             >
                               <FiEye className="w-4 h-4" />
                             </button>
                             <button
                               onClick={() => handleEditRole(role?.id)}
-                              className="text-green-600 hover:text-green-900"
+                              className="text-gray-400 hover:text-green-900"
                               title="编辑"
                             >
                               <FiEdit className="w-4 h-4" />
@@ -408,7 +401,7 @@ export default function RoleManagementPage() {
                       onClick={() => setCurrentPage(pageNum)}
                       className={`px-3 py-1 text-sm rounded ${
                         currentPage === pageNum
-                          ? "bg-pink-500 text-white"
+                          ? "bg-[#8C7E9C] text-white"
                           : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
@@ -424,7 +417,7 @@ export default function RoleManagementPage() {
                       onClick={() => setCurrentPage(totalPages)}
                       className={`px-3 py-1 text-sm rounded ${
                         currentPage === totalPages
-                          ? "bg-pink-500 text-white"
+                          ? "bg-[#8C7E9C] text-white"
                           : "text-gray-700 hover:bg-gray-100"
                       }`}
                     >
