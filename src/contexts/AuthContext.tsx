@@ -42,12 +42,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const userData = getStoredUser()
         const token = localStorage.getItem("authToken")
 
-        if (authStatus === "true" && userData && token) {
-          // We have stored auth data, restore the session
-          console.log("Restoring auth session from localStorage")
-          setUser(userData)
-          setIsAuthenticated(true)
-        }
+                 if (authStatus === "true" && userData && token) {
+                   // We have stored auth data, restore the session
+                   setUser(userData)
+                   setIsAuthenticated(true)
+                 }
       } catch (error) {
         console.error("Error checking authentication:", error)
         // Clear auth data on error
@@ -66,18 +65,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const response = await loginUser(username, password)
-      console.log("=== AUTH CONTEXT DEBUG ===")
-      console.log("AuthContext received response:", response)
-      console.log("response.code:", response.code)
-      console.log("response.data:", response.data)
-      console.log("response.error:", response.error)
-      console.log("response.msg:", response.msg)
-      console.log("===========================")
 
       if (response.code === 0 && response.data) {
         const loginData = response.data as any
-        console.log("Login API response:", loginData)
-        // Check if login was successful (code === 0)
 
         // Create user object from API response
         const userData: User = {
@@ -89,14 +79,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         }
 
         // Store authentication data
-        console.log("Storing token:", loginData.token)
         setAuthData(loginData.token, userData)
-
-        // Verify token was stored
-        console.log(
-          "Token stored, verifying:",
-          localStorage.getItem("authToken")
-        )
 
         setUser(userData)
         setIsAuthenticated(true)
@@ -119,22 +102,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const logout = async () => {
     try {
       setLogoutLoading(true)
-      console.log("Logging out...")
 
       // Use proxy in development, which should handle CORS automatically
       const response = await logoutUser()
-      console.log("Logout API response:", response)
 
       if (response.code === 0) {
-        console.log("Logout successful")
+        // Logout successful
       } else {
-        console.log("Logout API failed:", response.error)
+        // Logout API failed, but we'll still clear local data
       }
     } catch (error) {
-      console.error("Logout API error:", error)
+      // Logout API error, but we'll still clear local data
     } finally {
       // Always clear local auth data and redirect, regardless of API response
-      console.log("Clearing local auth data...")
       clearAuthData()
       setUser(null)
       setIsAuthenticated(false)

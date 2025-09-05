@@ -39,14 +39,7 @@ export const apiClient = async <T = unknown>(
 
     if (token) {
       headers["Authorization"] = `Bearer ${token}`
-      console.log("API Request with token:", token.substring(0, 20) + "...")
-    } else {
-      console.log("API Request without token")
     }
-
-    console.log("Making API request to:", url)
-    console.log("Request headers:", headers)
-    console.log("Request method:", options.method || "GET")
 
     const response = await fetch(url, {
       ...options,
@@ -150,7 +143,6 @@ export const apiClient = async <T = unknown>(
     ) {
       // Check if it's a CORS issue
       if (endpoint === "/admin/logout") {
-        console.log("CORS error detected for logout, attempting fallback...")
         // For logout, we can still proceed with local cleanup even if API fails
         return {
           success: false,

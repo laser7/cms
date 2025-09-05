@@ -45,7 +45,6 @@ export default function MediaDetailPage({ params }: { params: Promise<{ id: stri
     try {
       const result = await getMediaById(parseInt(id));
       
-      console.log('Media detail API response:', result); // Debug log
       
       if (result.success && result.data) {
         setMedia(result.data);

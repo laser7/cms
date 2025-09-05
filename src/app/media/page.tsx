@@ -50,15 +50,12 @@ export default function MediaPage() {
         page_type: pageType
       });
       
-      console.log('Media API result:', result); // Debug log
-      
       if (result.success && result.data) {
-        console.log('Media data:', result.data); // Debug log
-        setMedia(result.data.list);
-        setTotal(result.data.total);
+        setMedia(result.data.list)
+        setTotal(result.data.total)
       } else {
-        console.error('Failed to load media:', result.error);
-        setMedia([]);
+        console.error("Failed to load media:", result.error)
+        setMedia([])
       }
     } catch (error) {
       console.error('Error loading media:', error);
@@ -110,19 +107,16 @@ export default function MediaPage() {
       result = await createMedia(data as CreateMediaData);
       
       if (result.success) {
-        setIsCreateModalOpen(false);
-        loadMedia(); // Reload the list
-        
-        console.log('Media creation result:', result);
-        console.log('Returning media ID:', result.data?.id);
-        
+        setIsCreateModalOpen(false)
+        loadMedia() // Reload the list
+
         setToast({
-          message: '媒体创建成功',
-          type: 'success',
-          isVisible: true
-        });
-        
-        return result.data?.id || null; // Return the created media ID
+          message: "媒体创建成功",
+          type: "success",
+          isVisible: true,
+        })
+
+        return result.data?.id || null // Return the created media ID
       } else {
         setToast({
           message: '操作失败: ' + result.error,

@@ -65,7 +65,6 @@ export default function Dashboard() {
         setError(null)
       } finally {
         setLoading(false)
-        console.log("=== End Dashboard API Debug ===")
       }
     }
 

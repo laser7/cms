@@ -34,15 +34,7 @@ export const loginUser = async (
     })
 
     // Transform the response to match the expected ApiResponse format
-    console.log("=== LOGIN API DEBUG ===")
-    console.log("apiClient response:", response)
-    console.log("response.success:", response.success)
-    console.log("response.data:", response.data)
-    console.log("response.error:", response.error)
-    console.log("=========================")
-
     if (response.success && response.data) {
-      console.log("Returning success response")
       return {
         code: 0,
         data: response.data,
@@ -50,7 +42,6 @@ export const loginUser = async (
         msg: "Success",
       }
     } else {
-      console.log("Returning error response")
       return {
         code: 1,
         data: {} as LoginData,
@@ -59,7 +50,6 @@ export const loginUser = async (
       }
     }
   } catch (error) {
-    console.log("Login API catch error:", error)
     return {
       code: 1,
       data: {} as LoginData,
