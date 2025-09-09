@@ -1,9 +1,7 @@
 import { getAuthToken } from './auth';
 
-// Use proxy in development, direct URL in production
-const API_BASE_URL = process.env.NODE_ENV === 'development' 
-  ? '' // Use relative path for proxy
-  : 'https://dev.guara.fun';
+// Use Next.js API routes as proxy for both development and production
+const API_BASE_URL = '';
 
 export interface ApiResponse<T = unknown> {
   success: boolean
@@ -26,10 +24,7 @@ export const apiClient = async <T = unknown>(
 ): Promise<ApiResponse<T>> => {
   try {
     const token = getAuthToken()
-    const url =
-      process.env.NODE_ENV === "development"
-        ? `/api${endpoint}` // Use proxy in development
-        : `${API_BASE_URL}${endpoint}` // Use direct URL in production
+    const url = `/api${endpoint}` // Use Next.js API routes as proxy
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",

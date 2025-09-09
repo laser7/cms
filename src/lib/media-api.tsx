@@ -59,9 +59,7 @@ export const uploadImage = async (file: File) => {
   const { getAuthToken } = await import('./auth');
   const token = getAuthToken();
   
-  const url = process.env.NODE_ENV === 'development' 
-    ? '/api/admin/media/upload'
-    : 'https://dev.guara.fun/admin/media/upload';
+  const url = '/api/admin/media/upload';
   
   try {
     const response = await fetch(url, {
