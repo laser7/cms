@@ -16,7 +16,7 @@ export interface LogoutData {
 }
 
 // Define the response format that matches what the frontend expects
-export interface ApiResponse<T> {
+export interface AuthApiResponse<T> {
   code: number
   data: T
   error: string
@@ -26,7 +26,7 @@ export interface ApiResponse<T> {
 export const loginUser = async (
   username: string,
   password: string
-): Promise<ApiResponse<LoginData>> => {
+): Promise<AuthApiResponse<LoginData>> => {
   try {
     const response = await apiClient<LoginData>("/admin/login", {
       method: "POST",
@@ -62,7 +62,7 @@ export const loginUser = async (
 export const loginUserAlt = async (
   username: string,
   password: string
-): Promise<ApiResponse<LoginData>> => {
+): Promise<AuthApiResponse<LoginData>> => {
   try {
     const response = await apiClient<LoginData>("/login", {
       method: "POST",
@@ -95,7 +95,7 @@ export const loginUserAlt = async (
   }
 }
 
-export const logoutUser = async (): Promise<ApiResponse<LogoutData>> => {
+export const logoutUser = async (): Promise<AuthApiResponse<LogoutData>> => {
   try {
     const response = await apiClient<LogoutData>("/admin/logout", {
       method: "POST",
@@ -127,7 +127,7 @@ export const logoutUser = async (): Promise<ApiResponse<LogoutData>> => {
   }
 }
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-export const getUserProfile = async (): Promise<ApiResponse<any>> => {
+export const getUserProfile = async (): Promise<AuthApiResponse<any>> => {
   try {
     const response = await apiClient("/admin/profile")
 
