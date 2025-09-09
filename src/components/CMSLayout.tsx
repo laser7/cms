@@ -5,26 +5,77 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
+import { 
+  FiBarChart, 
+  FiUsers, 
+  FiFileText, 
+  FiBook, 
+  FiMusic, 
+  FiCpu, 
+  FiImage, 
+  FiShield, 
+  FiMessageCircle, 
+  FiSettings, 
+  FiLogOut,
+  FiChevronDown
+} from 'react-icons/fi';
 
 interface CMSLayoutProps {
   children: React.ReactNode;
 }
 
 const navigation = [
-  { name: '数据大屏', href: '/', icon: '📊' },
-  { name: '用户', href: '/users', icon: '👤' },
-  { name: '内容管理', href: '/posts', icon: '📝' },
-  { name: 'AI', href: '/ai', icon: '🤖' },
-  { name: '媒体管理', href: '/media', icon: '🖼️' },
-  { name: '权限管理', href: '/permissions', icon: '🔐' },
-  { name: '会话管理', href: '/conversations', icon: '💬' },
-  { name: '设置', href: '/settings', icon: '⚙️' },
+  { name: '数据大屏', href: '/', icon: <FiBarChart /> },
+  { name: '用户', href: '/users', icon: <FiUsers /> },
+  { 
+    name: '内容管理', 
+    href: '/posts', 
+    icon: <FiFileText />,
+    subItems: [
+      { name: '易经文章', href: '/posts/iching', icon: <FiBook /> },
+      { name: '音频管理', href: '/posts/audio', icon: <FiMusic /> }
+    ]
+  },
+  { name: 'AI', href: '/ai', icon: <FiCpu /> },
+  { name: '媒体管理', href: '/media', icon: <FiImage /> },
+  { 
+    name: '权限管理', 
+    href: '/permissions', 
+    icon: <FiShield />,
+    subItems: [
+      { name: '菜单管理', href: '/permissions/menus', icon: <FiFileText /> },
+      { name: '角色管理', href: '/permissions/roles', icon: <FiUsers /> }
+    ]
+  },
+  { name: '会话管理', href: '/conversations', icon: <FiMessageCircle /> },
+  { 
+    name: '设置', 
+    href: '/settings', 
+    icon: <FiSettings />,
+    subItems: [
+      { name: '通知管理', href: '/settings/notifications', icon: <FiMessageCircle /> },
+      { name: '徽章管理', href: '/settings/badges', icon: <FiShield /> }
+    ]
+  },
 ];
 
 export default function CMSLayout({ children }: CMSLayoutProps) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const pathname = usePathname();
-  const { user, logout } = useAuth();
+  const { user, logout, logoutLoading } = useAuth();
+
+  // Initialize expandedItems based on current pathname
+  const getInitialExpandedItems = () => {
+    const expanded = new Set<string>();
+    navigation.forEach(item => {
+      if (item.subItems && (pathname === item.href || item.subItems.some(sub => pathname === sub.href))) {
+        expanded.add(item.name);
+      }
+    });
+    return expanded;
+  };
+
+  const [expandedItems, setExpandedItems] = useState<Set<string>>(getInitialExpandedItems());
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -42,43 +93,114 @@ export default function CMSLayout({ children }: CMSLayoutProps) {
                 className="object-cover"
               />
             </div>
-                          <button
-                onClick={() => setSidebarOpen(false)}
-                className="text-white hover:text-white"
-              >
-                <span className="sr-only">Close sidebar</span>
-                ✕
-              </button>
-            </div>
-                        <nav className="flex-1 space-y-1 px-2 py-4">
-              {navigation.map((item) => (
-                <Link
-                  key={item.name}
-                  href={item.href}
-                                  className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  pathname === item.href
-                    ? 'text-white'
-                    : 'text-white hover:bg-purple-700 hover:text-white'
-                }`}
-                onClick={() => setSidebarOpen(false)}
-                style={{
-                  backgroundColor: pathname === item.href ? '#8C7E9C' : 'transparent'
-                }}
-                >
-                  <span className="mr-3 text-lg">{item.icon}</span>
-                  {item.name}
-                </Link>
-              ))}
-            </nav>
-            <div className="p-4 border-t border-purple-700">
-              <button
-                onClick={logout}
-                className="w-full flex items-center px-3 py-2 text-sm font-medium text-white hover:bg-purple-700 hover:text-white rounded-md transition-colors"
-              >
-                <span className="mr-3">🚪</span>
-                退出登录
-              </button>
-            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="text-white hover:text-white"
+            >
+              <span className="sr-only">Close sidebar</span>
+              ✕
+            </button>
+          </div>
+          <nav className="flex-1 space-y-1 px-2 py-4">
+            {navigation.map((item) => (
+              <div key={item.name}>
+                {item.subItems ? (
+                  <div
+                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                      pathname === item.href || item.subItems.some(sub => pathname === sub.href)
+                        ? 'text-white'
+                        : 'text-white hover:bg-[#8C7E9C] hover:text-white'
+                    }`}
+                    onClick={() => {
+                      setExpandedItems(prev => {
+                        const newSet = new Set(prev);
+                        if (newSet.has(item.name)) {
+                          newSet.delete(item.name);
+                        } else {
+                          newSet.add(item.name);
+                        }
+                        return newSet;
+                      });
+                    }}
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: pathname === item.href || item.subItems.some(sub => pathname === sub.href) ? '1px solid rgba(140, 126, 156, 0.5)' : '1px solid transparent',
+                      borderRadius: pathname === item.href || item.subItems.some(sub => pathname === sub.href) ? '8px 8px 8px 0px' : '8px'
+                    }}
+                  >
+                    <span className="mr-3 text-lg">{item.icon}</span>
+                    <span className="flex-1">{item.name}</span>
+                    <span className={`transition-transform ${expandedItems.has(item.name) ? 'rotate-90' : ''}`}>
+                      <FiChevronDown />
+                    </span>
+                  </div>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      pathname === item.href
+                        ? 'text-white'
+                        : 'text-white hover:bg-[#8C7E9C] hover:text-white'
+                    }`}
+                    onClick={() => setSidebarOpen(false)}
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: pathname === item.href ? '1px solid rgba(140, 126, 156, 0.5)' : '1px solid transparent',
+                      borderRadius: pathname === item.href ? '8px' : '8px'
+                    }}
+                  >
+                    <span className="mr-3 text-lg">{item.icon}</span>
+                    <span className="flex-1">{item.name}</span>
+                  </Link>
+                )}
+                
+                {item.subItems && expandedItems.has(item.name) && (
+                  <div className="ml-6 space-y-1">
+                    {item.subItems.map((subItem, index) => (
+                      <Link
+                        key={subItem.href}
+                        href={subItem.href}
+                        className={`group flex items-center px-3 py-2 text-sm font-medium transition-colors ${
+                          pathname === subItem.href
+                            ? 'text-white'
+                            : 'text-white hover:bg-[#8C7E9C] hover:text-white'
+                        }`}
+                        onClick={() => {
+                          setSidebarOpen(false);
+                        }}
+                        style={{
+                          backgroundColor: pathname === subItem.href ? 'rgba(140, 126, 156, 0.3)' : 'transparent',
+                          border: '1px solid transparent',
+                          borderRadius: pathname === subItem.href ? 
+                            (index === item.subItems!.length - 1 ? '0px 8px 8px 8px' : '0px 8px 0px 0px') : 
+                            '8px'
+                        }}
+                      >
+                        <span className="mr-3 text-sm">{subItem.icon}</span>
+                        {subItem.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ))}
+          </nav>
+          <div className="p-4 border-t border-[#8C7E9C]">
+            <button
+              onClick={logout}
+              disabled={logoutLoading}
+              className="w-full flex items-center px-3 py-2 text-sm font-medium text-white hover:bg-[#8C7E9C] hover:text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <span className="mr-3">
+                {logoutLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <FiLogOut />
+                )}
+              </span>
+              {logoutLoading ? '退出中...' : '退出登录'}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -98,30 +220,99 @@ export default function CMSLayout({ children }: CMSLayoutProps) {
           </div>
           <nav className="flex-1 space-y-1 px-2 py-4">
             {navigation.map((item) => (
-              <Link
-                key={item.name}
-                href={item.href}
-                className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
-                  pathname === item.href
-                    ? 'text-white'
-                    : 'text-white hover:bg-purple-700 hover:text-white'
-                }`}
-                style={{
-                  backgroundColor: pathname === item.href ? '#8C7E9C' : 'transparent'
-                }}
-              >
-                <span className="mr-3 text-lg">{item.icon}</span>
-                {item.name}
-              </Link>
+              <div key={item.name}>
+                {item.subItems ? (
+                  <div
+                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors cursor-pointer ${
+                      pathname === item.href || item.subItems.some(sub => pathname === sub.href)
+                        ? 'text-white'
+                        : 'text-white hover:bg-[#8C7E9C] hover:text-white'
+                    }`}
+                    onClick={() => {
+                      setExpandedItems(prev => {
+                        const newSet = new Set(prev);
+                        if (newSet.has(item.name)) {
+                          newSet.delete(item.name);
+                        } else {
+                          newSet.add(item.name);
+                        }
+                        return newSet;
+                      });
+                    }}
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: pathname === item.href || item.subItems.some(sub => pathname === sub.href) ? '1px solid rgba(140, 126, 156, 0.5)' : '1px solid transparent',
+                      borderRadius: pathname === item.href || item.subItems.some(sub => pathname === sub.href) ? '8px 8px 8px 0px' : '8px'
+                    }}
+                  >
+                    <span className="mr-3 text-lg">{item.icon}</span>
+                    <span className="flex-1">{item.name}</span>
+                    <span className={`transition-transform ${expandedItems.has(item.name) ? 'rotate-90' : ''}`}>
+                      <FiChevronDown />
+                    </span>
+                  </div>
+                ) : (
+                  <Link
+                    href={item.href}
+                    className={`group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors ${
+                      pathname === item.href
+                        ? 'text-white'
+                        : 'text-white hover:bg-[#8C7E9C] hover:text-white'
+                    }`}
+                    style={{
+                      backgroundColor: 'transparent',
+                      border: pathname === item.href ? '1px solid rgba(140, 126, 156, 0.5)' : '1px solid transparent',
+                      borderRadius: pathname === item.href ? '8px' : '8px'
+                    }}
+                  >
+                    <span className="mr-3 text-lg">{item.icon}</span>
+                    <span className="flex-1">{item.name}</span>
+                  </Link>
+                )}
+                
+                {item.subItems && expandedItems.has(item.name) && (
+                  <div className="ml-6 space-y-1">
+                    {item.subItems.map((subItem, index) => (
+                      <Link
+                        key={subItem.href}
+                        href={subItem.href}
+                        className={`group flex items-center px-3 py-2 text-sm font-medium transition-colors ${
+                          pathname === subItem.href
+                            ? 'text-white'
+                            : 'text-white hover:bg-[#8C7E9C] hover:text-white'
+                        }`}
+
+                        style={{
+                          backgroundColor: pathname === subItem.href ? 'rgba(140, 126, 156, 0.3)' : 'transparent',
+                          border: '1px solid transparent',
+                          borderRadius: pathname === subItem.href ? 
+                            (index === item.subItems!.length - 1 ? '0px 8px 8px 8px' : '0px 8px 0px 0px') : 
+                            '8px'
+                        }}
+                      >
+                        <span className="mr-3 text-sm">{subItem.icon}</span>
+                        {subItem.name}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
             ))}
           </nav>
           <div className="p-4 border-t border-[#8C7E9C]">
-            <button 
+            <button
               onClick={logout}
-              className="w-full flex items-center px-3 py-2 text-sm font-medium text-white hover:bg-purple-700 hover:text-white rounded-md transition-colors"
+              disabled={logoutLoading}
+              className="w-full flex items-center px-3 py-2 text-sm font-medium text-white hover:bg-[#8C7E9C] hover:text-white rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <span className="mr-3">🚪</span>
-              退出登录
+              <span className="mr-3">
+                {logoutLoading ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
+                ) : (
+                  <FiLogOut />
+                )}
+              </span>
+              {logoutLoading ? '退出中...' : '退出登录'}
             </button>
           </div>
         </div>
@@ -144,8 +335,8 @@ export default function CMSLayout({ children }: CMSLayoutProps) {
             <div className="flex flex-1"></div>
             <div className="flex items-center gap-x-4 lg:gap-x-6">
               <div className="flex items-center space-x-2">
-                <div className="h-8 w-8 rounded-full bg-purple-100 flex items-center justify-center">
-                  <span className="text-sm font-medium text-purple-600">
+                <div className="h-8 w-8 rounded-full bg-[#8C7E9C] bg-opacity-20 flex items-center justify-center">
+                  <span className="text-sm font-medium text-[#8C7E9C]">
                     {user?.name.charAt(0).toUpperCase()}
                   </span>
                 </div>

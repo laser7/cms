@@ -1,246 +1,424 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { FiTrash2, FiEye, FiEdit3, FiPlus, FiSearch, FiRefreshCw } from 'react-icons/fi';
 import CMSLayout from '@/components/CMSLayout';
 import ProtectedRoute from '@/components/ProtectedRoute';
-
-interface AIFeature {
-  id: string;
-  name: string;
-  description: string;
-  icon: string;
-  status: 'active' | 'inactive' | 'beta';
-  usage: number;
-  limit: number;
-}
-
-const aiFeatures: AIFeature[] = [
-  {
-    id: 'content-generation',
-    name: '内容生成',
-    description: '使用AI自动生成文章、标题和描述',
-    icon: '✍️',
-    status: 'active',
-    usage: 45,
-    limit: 100
-  },
-  {
-    id: 'image-analysis',
-    name: '图像分析',
-    description: '自动分析图片内容并生成标签',
-    icon: '🖼️',
-    status: 'active',
-    usage: 23,
-    limit: 50
-  },
-  {
-    id: 'sentiment-analysis',
-    name: '情感分析',
-    description: '分析用户评论和反馈的情感倾向',
-    icon: '😊',
-    status: 'beta',
-    usage: 12,
-    limit: 30
-  },
-  {
-    id: 'auto-translation',
-    name: '自动翻译',
-    description: '多语言内容自动翻译',
-    icon: '🌐',
-    status: 'active',
-    usage: 67,
-    limit: 200
-  },
-  {
-    id: 'seo-optimization',
-    name: 'SEO优化',
-    description: '自动优化内容以提高搜索引擎排名',
-    icon: '📈',
-    status: 'beta',
-    usage: 8,
-    limit: 25
-  },
-  {
-    id: 'chatbot',
-    name: '智能客服',
-    description: 'AI驱动的客户服务聊天机器人',
-    icon: '🤖',
-    status: 'inactive',
-    usage: 0,
-    limit: 100
-  }
-];
+import { getAIList, deleteAI } from '@/lib/ai-api';
+import { AI, AIListParams } from '@/types';
+import CreateAIModal from '@/components/CreateAIModal';
+import Toast from '@/components/Toast';
+import DeleteConfirmModal from '@/components/DeleteConfirmModal';
 
 export default function AIPage() {
-  const [prompt, setPrompt] = useState('');
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generatedContent, setGeneratedContent] = useState('');
+  const router = useRouter();
+  const [aiFeatures, setAiFeatures] = useState<AI[]>([]);
+  const [selectedRows, setSelectedRows] = useState<Set<number>>(new Set());
+  const [searchTerm, setSearchTerm] = useState('');
+  const [pageFilter, setPageFilter] = useState('');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState<number | null>(null);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<number | null>(null);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [toast, setToast] = useState<{
+    message: string;
+    type: 'success' | 'error' | 'info';
+    isVisible: boolean;
+  }>({
+    message: '',
+    type: 'info',
+    isVisible: false
+  });
 
-  const handleGenerateContent = async () => {
-    if (!prompt.trim()) return;
-    
-    setIsGenerating(true);
-    // Simulate AI generation
-    await new Promise(resolve => setTimeout(resolve, 2000));
-    
-    setGeneratedContent(`基于您的提示"${prompt}"，AI生成了以下内容：
+  const fetchAIFeatures = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params: AIListParams = {
+        page: currentPage,
+        page_size: pageSize,
+        search: searchTerm,
+        page_filter: pageFilter,
+      };
+      const response = await getAIList(params);
+      if (response.code === 0 && response.data) {
+        setAiFeatures(response.data.list);
+        setTotal(response.data.total);
+      } else {
+        setError(response.error || 'Failed to fetch AI features');
+      }
+    } catch (err) {
+      setError('Failed to fetch AI features');
+      console.error(err);
+    } finally {
+      setLoading(false);
+    }
+  }, [currentPage, pageSize, searchTerm, pageFilter]);
 
-这是一段自动生成的内容示例。在实际应用中，这里会显示由AI模型根据您的输入生成的真实内容。
+  useEffect(() => {
+    fetchAIFeatures();
+  }, [fetchAIFeatures]);
 
-您可以继续编辑和完善这些内容，或者重新生成以获得不同的结果。`);
-    
-    setIsGenerating(false);
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'active':
-        return 'bg-green-100 text-green-800';
-      case 'beta':
-        return 'bg-yellow-100 text-yellow-800';
-      case 'inactive':
-        return 'bg-gray-100 text-gray-800';
-      default:
-        return 'bg-gray-100 text-gray-800';
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedRows(new Set(aiFeatures.map(a => a.id)));
+    } else {
+      setSelectedRows(new Set());
     }
   };
 
-  const getStatusText = (status: string) => {
-    switch (status) {
-      case 'active':
-        return '可用';
-      case 'beta':
-        return '测试版';
-      case 'inactive':
-        return '未启用';
-      default:
-        return '未知';
+  const handleDeleteAI = async (id: number) => {
+    if (deleteLoading === id) return;
+    setDeleteLoading(id);
+    try {
+      const result = await deleteAI(id);
+      
+      if (result.code === 0) {
+        // Successfully deleted
+        setAiFeatures(aiFeatures?.filter(a => a.id !== id));
+        setTotal(total - 1);
+        setToast({
+          message: 'AI功能删除成功',
+          type: 'success',
+          isVisible: true
+        });
+      } else {
+        setToast({
+          message: result.error || '删除失败',
+          type: 'error',
+          isVisible: true
+        });
+      }
+    } catch (err) {
+      setToast({
+        message: '删除AI功能时发生错误',
+        type: 'error',
+        isVisible: true
+      });
+      console.error(err);
+    } finally {
+      setDeleteLoading(null);
     }
+  };
+
+  const confirmDeleteAI = (id: number) => {
+    setShowDeleteConfirm(id);
+  };
+
+  const filteredAIFeatures = aiFeatures?.filter(feature =>
+    feature.api.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    feature.id.toString().toLowerCase().includes(searchTerm.toLowerCase()) ||
+    feature.page.toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  const handleViewAI = (id: number) => {
+    router.push(`/ai/${id}?mode=view`);
+  };
+
+  const handleEditAI = (id: number) => {
+    router.push(`/ai/${id}?mode=edit`);
   };
 
   return (
     <ProtectedRoute>
       <CMSLayout>
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Page header */}
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">AI 智能助手</h1>
+          <div className="flex flex-row gap-3">
+            <h1 className="text-xl font-bold text-gray-900">AI 列表</h1>
             <p className="mt-1 text-sm text-gray-500">
-              利用人工智能提升您的内容创作和管理效率
+              管理系统中的所有AI功能和配置
             </p>
           </div>
 
-          {/* AI Features Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {aiFeatures.map((feature) => (
-              <div
-                key={feature.id}
-                className="bg-white shadow rounded-lg p-6 hover:shadow-md transition-shadow cursor-pointer"
-                onClick={() => console.log('Selected feature:', feature.id)}
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="text-3xl">{feature.icon}</div>
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getStatusColor(feature.status)}`}>
-                    {getStatusText(feature.status)}
-                  </span>
-                </div>
-                <h3 className="text-lg font-medium text-gray-900 mb-2">{feature.name}</h3>
-                <p className="text-sm text-gray-500 mb-4">{feature.description}</p>
-                
-                {/* Usage bar */}
-                <div className="mb-2">
-                  <div className="flex justify-between text-xs text-gray-500 mb-1">
-                    <span>使用量</span>
-                    <span>{feature.usage}/{feature.limit}</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div
-                      className="bg-purple-600 h-2 rounded-full transition-all duration-300"
-                      style={{ width: `${(feature.usage / feature.limit) * 100}%` }}
-                    ></div>
-                  </div>
+          {/* Error Display */}
+          {error && (
+            <div className="bg-red-50 border border-red-200 rounded-md p-4">
+              <div className="flex">
+                <div className="ml-3">
+                  <h3 className="text-sm font-medium text-red-800">错误</h3>
+                  <div className="mt-2 text-sm text-red-700">{error}</div>
                 </div>
               </div>
-            ))}
-          </div>
+            </div>
+          )}
 
-          {/* Content Generation Tool */}
+          {/* Controls */}
           <div className="bg-white shadow rounded-lg">
             <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                AI 内容生成器
-              </h3>
-              
-              <div className="space-y-4">
-                <div>
-                  <label htmlFor="prompt" className="block text-sm font-medium text-gray-700 mb-2">
-                    输入提示
-                  </label>
-                  <textarea
-                    id="prompt"
-                    rows={4}
-                    value={prompt}
-                    onChange={(e) => setPrompt(e.target.value)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                    placeholder="描述您想要生成的内容类型、主题或风格..."
-                  />
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      checked={selectedRows.size === aiFeatures.length}
+                      onChange={(e) => handleSelectAll(e.target.checked)}
+                      className="rounded border-gray-300 text-[#8C7E9C] focus:ring-[#8C7E9C]"
+                    />
+                  </div>
+                  <button className="text-sm text-gray-600 hover:text-gray-900">
+                    选择列
+                  </button>
+                  <button className="text-sm text-gray-600 hover:text-gray-900">
+                    ↕️
+                  </button>
                 </div>
-                
-                <div className="flex justify-end">
-                  <button
-                    onClick={handleGenerateContent}
-                    disabled={isGenerating || !prompt.trim()}
-                    className="bg-purple-600 hover:bg-purple-700 disabled:bg-gray-400 text-white px-4 py-2 rounded-md text-sm font-medium transition-colors"
+
+                <div className="flex items-center space-x-4">
+                  <div className="relative">
+                    <FiSearch
+                      className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+                      size={16}
+                    />
+                    <input
+                      type="text"
+                      placeholder="搜索列表..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-64 pl-10 pr-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent"
+                    />
+                  </div>
+                  <select
+                    value={pageFilter}
+                    onChange={(e) => setPageFilter(e.target.value)}
+                    className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-[#8C7E9C] focus:border-transparent"
                   >
-                    {isGenerating ? '生成中...' : '生成内容'}
+                    <option value="">所有页面</option>
+                    <option value="onboarding">onboarding</option>
+                    <option value="daily">daily</option>
+                    <option value="explore">explore</option>
+                    <option value="chat">chat</option>
+                    <option value="profile">profile</option>
+                    <option value="natal">natal</option>
+                    <option value="elements">elements</option>
+                    <option value="number">number</option>
+                    <option value="article">article</option>
+                    <option value="dream">dream</option>
+                  </select>
+                  <button
+                    onClick={fetchAIFeatures}
+                    className="text-gray-600 hover:text-gray-900 p-2"
+                    title="刷新"
+                  >
+                    <FiRefreshCw size={20} />
+                  </button>
+                  <button
+                    onClick={() => setIsCreateModalOpen(true)}
+                    className="bg-[#8C7E9C] hover:bg-[#7A6B8A] text-white px-4 py-2 rounded-md text-sm font-medium transition-colors flex items-center space-x-2"
+                  >
+                    <FiPlus size={16} />
+                    <span>新增</span>
                   </button>
                 </div>
               </div>
-
-              {generatedContent && (
-                <div className="mt-6">
-                  <h4 className="text-sm font-medium text-gray-700 mb-2">生成结果</h4>
-                  <div className="bg-gray-50 rounded-md p-4">
-                    <pre className="text-sm text-gray-900 whitespace-pre-wrap">{generatedContent}</pre>
-                  </div>
-                  <div className="mt-4 flex space-x-2">
-                    <button className="text-sm text-purple-600 hover:text-purple-700">
-                      复制内容
-                    </button>
-                    <button className="text-sm text-purple-600 hover:text-purple-700">
-                      重新生成
-                    </button>
-                  </div>
-                </div>
-              )}
             </div>
           </div>
 
-          {/* AI Analytics */}
+          {/* AI Features Table */}
+          <div className="bg-white shadow rounded-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      ID
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      API
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      页面
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      Prompt
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      创建时间
+                    </th>
+                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                      操作
+                    </th>
+                  </tr>
+                </thead>
+                <tbody className="bg-white divide-y divide-gray-200">
+                  {loading ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-6 py-4 text-center text-gray-500"
+                      >
+                        Loading...
+                      </td>
+                    </tr>
+                  ) : error ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-6 py-4 text-center text-red-500"
+                      >
+                        {error}
+                      </td>
+                    </tr>
+                  ) : filteredAIFeatures.length === 0 ? (
+                    <tr>
+                      <td
+                        colSpan={6}
+                        className="px-6 py-4 text-center text-gray-500"
+                      >
+                        No AI features found.
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredAIFeatures.map((feature) => (
+                      <tr key={feature.id} className="hover:bg-gray-50">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {feature.id}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {feature.api}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {feature.page}
+                        </td>
+                        <td className="px-6 py-4 text-sm text-gray-900 max-w-xs truncate">
+                          {feature.prompt}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                          {feature.created_at}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => confirmDeleteAI(feature.id)}
+                              className="text-gray-400 hover:text-gray-600 p-1"
+                              disabled={deleteLoading === feature.id}
+                            >
+                              {deleteLoading === feature.id ? (
+                                <svg
+                                  className="animate-spin h-4 w-4 text-gray-400"
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  fill="none"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  ></circle>
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  ></path>
+                                </svg>
+                              ) : (
+                                <FiTrash2 size={16} />
+                              )}
+                            </button>
+                            <button
+                              onClick={() => handleViewAI(feature.id)}
+                              className="text-gray-400 hover:text-gray-600 p-1"
+                            >
+                              <FiEye size={16} />
+                            </button>
+                            <button
+                              onClick={() => handleEditAI(feature.id)}
+                              className="text-gray-400 hover:text-gray-600 p-1"
+                            >
+                              <FiEdit3 size={16} />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Pagination */}
           <div className="bg-white shadow rounded-lg">
-            <div className="px-4 py-5 sm:p-6">
-              <h3 className="text-lg leading-6 font-medium text-gray-900 mb-4">
-                AI 使用统计
-              </h3>
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">1,234</div>
-                  <div className="text-sm text-gray-500">本月生成内容</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-green-600">89%</div>
-                  <div className="text-sm text-gray-500">用户满意度</div>
-                </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">45</div>
-                  <div className="text-sm text-gray-500">节省时间(小时)</div>
-                </div>
+            <div className="px-4 py-3 flex items-center justify-between border-t border-gray-200 sm:px-6">
+              <div className="flex items-center space-x-2">
+                <button
+                  onClick={() => setCurrentPage(Math.max(1, currentPage - 1))}
+                  disabled={currentPage === 1}
+                  className="text-gray-400 hover:text-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed"
+                >
+                  ←
+                </button>
+                <span className="text-sm text-gray-700">
+                  第 {currentPage} 页，共 {Math.ceil(total / pageSize)} 页
+                </span>
+                <button
+                  onClick={() => setCurrentPage(currentPage + 1)}
+                  disabled={currentPage >= Math.ceil(total / pageSize)}
+                  className="text-gray-400 hover:text-gray-600 disabled:text-gray-300 disabled:cursor-not-allowed"
+                >
+                  →
+                </button>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className="text-sm text-gray-700">显示</span>
+                <select
+                  value={pageSize}
+                  onChange={(e) => {
+                    setPageSize(Number(e.target.value))
+                    setCurrentPage(1)
+                  }}
+                  className="text-sm border border-gray-300 rounded px-2 py-1"
+                >
+                  <option value={10}>10行</option>
+                  <option value={20}>20行</option>
+                  <option value={50}>50行</option>
+                </select>
+                <span className="text-sm text-gray-700">共 {total} 条记录</span>
               </div>
             </div>
           </div>
         </div>
+
+        {/* Create AI Modal */}
+        <CreateAIModal
+          isOpen={isCreateModalOpen}
+          onClose={() => setIsCreateModalOpen(false)}
+          onSuccess={() => {
+            setIsCreateModalOpen(false)
+            fetchAIFeatures()
+          }}
+        />
+
+        {/* Toast Notifications */}
+        <Toast
+          message={toast.message}
+          type={toast.type}
+          isVisible={toast.isVisible}
+          onClose={() => setToast((prev) => ({ ...prev, isVisible: false }))}
+        />
+
+        {/* Delete Confirmation Modal */}
+        <DeleteConfirmModal
+          isOpen={showDeleteConfirm !== null}
+          onClose={() => setShowDeleteConfirm(null)}
+          onConfirm={() => {
+            if (showDeleteConfirm) {
+              handleDeleteAI(showDeleteConfirm)
+              setShowDeleteConfirm(null)
+            }
+          }}
+          title="确认删除"
+          message="确定要删除这个AI功能吗？此操作无法撤销。"
+          itemName="AI功能"
+        />
       </CMSLayout>
     </ProtectedRoute>
-  );
+  )
 }

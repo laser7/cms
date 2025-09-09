@@ -30,4 +30,163 @@ export interface SiteSettings {
   description: string;
   logo: string;
   theme: 'light' | 'dark';
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  content: string;
+  type: 'reminder' | 'promotion' | 'update' | 'alert';
+  pushTime: string;
+  pushLocation: string;
+  createdAt: string;
+  updatedAt: string;
+  status: 'active' | 'inactive' | 'draft';
+}
+
+export interface Badge {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  color: string;
+  criteria: string;
+  triggerCondition: string;
+  category: string;
+  ownerCount: number;
+  createdAt: string;
+  updatedAt: string;
+  status: 'active' | 'inactive';
+}
+
+export interface Soundtrack {
+  id: number;
+  title: string;
+  composer: string;
+  category: string;
+  cover: string;
+  url: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface SoundtrackListResponse {
+  list: Soundtrack[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export interface SoundtrackListParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  category?: string;
+}
+
+export interface ApiResponse<T = unknown> {
+  code: number;
+  data: T;
+  error: string;
+  msg: string;
+}
+
+export interface RawApiResponse<T = unknown> {
+  code: number;
+  data: T;
+  msg: string;
+} 
+
+export interface AI {
+  id: number;
+  api: string;
+  function: string;
+  model: string;
+  page: string;
+  prompt: string;
+  created_at: string;
+  updated_at: string;
+  processing_time?: number;
+  request?: string;
+  response?: string;
+}
+
+export interface AIListResponse {
+  list: AI[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export interface AIListParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  page_filter?: string;
+}
+
+export interface CreateAIData {
+  api: string;
+  function: string;
+  model: string;
+  page: string;
+  prompt: string;
+} 
+
+export interface MediaImage {
+  created_at: string;
+  filename: string;
+  id: number;
+  media_id: number;
+  size: number;
+  sort: number;
+  type: string;
+  url: string;
+}
+
+export interface MediaItem {
+  created_at: string;
+  id: number;
+  images: string[] | null; // For list API (array of URLs)
+  detailedImages?: MediaImage[]; // For detail API (full image objects)
+  name: string;
+  page: string;
+  raw_api?: string;
+  updated_at?: string;
+}
+
+export interface MediaListResponse {
+  list: MediaItem[];
+  page: number;
+  page_size: number;
+  total: number;
+}
+
+export interface MediaListParams {
+  page?: number;
+  page_size?: number;
+  search?: string;
+  page_type?: string;
+}
+
+export interface CreateMediaData {
+  images: number[];
+  name: string;
+  page: string;
+  raw_api?: string;
+}
+
+export interface UpdateMediaData {
+  images: number[];
+  name: string;
+  page: string;
+  raw_api?: string;
+}
+
+export interface UploadImageResponse {
+  filename: string;
+  id: number;
+  size: number;
+  type: string;
+  url: string;
 } 

@@ -41,8 +41,7 @@ export default function RegisterPage() {
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     try {
-      // In a real app, you'd send this to your API
-      // For demo purposes, we'll just simulate success
+
       setSuccess('Account created successfully! Redirecting to login...');
       
       // Store the new user (in a real app, this would be in a database)
