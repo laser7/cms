@@ -162,7 +162,7 @@ export default function MenuDetailPage({
       setIsDeleteModalOpen(false)
     }
   }
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleInputChange = (field: keyof MenuItem, value: any) => {
     if (!menu) return
     setMenu((prev) => (prev ? { ...prev, [field]: value } : null))

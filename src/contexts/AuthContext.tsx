@@ -67,6 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const response = await loginUser(username, password)
 
       if (response.code === 0 && response.data) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const loginData = response.data as any
 
         // Create user object from API response

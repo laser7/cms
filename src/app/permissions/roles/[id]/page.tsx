@@ -402,7 +402,7 @@ export default function RoleDetailPage({
       setIsDeleteModalOpen(false)
     }
   }
-
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleInputChange = (field: keyof RoleItem, value: any) => {
     if (!role) return
     setRole((prev) => (prev ? { ...prev, [field]: value } : null))

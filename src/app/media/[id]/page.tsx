@@ -71,6 +71,7 @@ export default function MediaDetailPage({
             typeof result.data.images[0] === "object" &&
             "id" in result.data.images[0]
           ) {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
             imageIds = (result.data.images as any[]).map((img) => img.id)
           }
         }
@@ -325,6 +326,7 @@ export default function MediaDetailPage({
           typeof media.images[0] === "object" &&
           "id" in media.images[0]
         ) {
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
           imageIds = (media.images as any[]).map((img) => img.id)
         }
 
@@ -508,6 +510,7 @@ export default function MediaDetailPage({
                       typeof media.images[0] === "object"
                     ? media.images
                     : []
+                    // eslint-disable-next-line @typescript-eslint/no-explicit-any
                   ).map((image: any) => (
                     <div key={image.id} className="relative group">
                       <div className="aspect-w-1 aspect-h-1 w-full overflow-hidden rounded-lg bg-gray-200">

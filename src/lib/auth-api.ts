@@ -126,7 +126,7 @@ export const logoutUser = async (): Promise<ApiResponse<LogoutData>> => {
     }
   }
 }
-
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const getUserProfile = async (): Promise<ApiResponse<any>> => {
   try {
     const response = await apiClient("/admin/profile")

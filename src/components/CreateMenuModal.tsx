@@ -15,27 +15,31 @@ interface CreateMenuModalProps {
 
 export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess }: CreateMenuModalProps) {
   const [formData, setFormData] = useState<CreateMenuData>({
-    code: '',
-    name: '',
-    route: '',
-    type: '页面',
-    icon: '',
+    code: "",
+    name: "",
+    route: "",
+    type: "页面",
+    icon: "",
     is_top_level: true,
     parent_id: undefined,
     sort: 0,
-    status: 1
-  });
+    status: 1,
+  })
 
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [toast, setToast] = useState<{ message: string; type: 'success' | 'error'; isVisible: boolean }>({
-    message: '',
-    type: 'success',
-    isVisible: false
-  });
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [toast, setToast] = useState<{
+    message: string
+    type: "success" | "error"
+    isVisible: boolean
+  }>({
+    message: "",
+    type: "success",
+    isVisible: false,
+  })
 
   // Initialize form data when editing
   useEffect(() => {
-    if (mode === 'edit' && menu) {
+    if (mode === "edit" && menu) {
       setFormData({
         code: menu.code,
         name: menu.name,
@@ -45,96 +49,100 @@ export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess
         is_top_level: menu.is_top_level,
         parent_id: menu.parent_id || undefined,
         sort: menu.sort,
-        status: menu.status
-      });
+        status: menu.status,
+      })
     } else {
       // Reset form for create mode
       setFormData({
-        code: '',
-        name: '',
-        route: '',
-        type: '页面',
-        icon: '',
+        code: "",
+        name: "",
+        route: "",
+        type: "页面",
+        icon: "",
         is_top_level: true,
         parent_id: undefined,
         sort: 0,
-        status: 1
-      });
+        status: 1,
+      })
     }
-  }, [mode, menu]);
+  }, [mode, menu])
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (!formData.name.trim() || !formData.code.trim() || !formData.route.trim()) {
+    e.preventDefault()
+
+    if (
+      !formData.name.trim() ||
+      !formData.code.trim() ||
+      !formData.route.trim()
+    ) {
       setToast({
-        message: '请填写所有必填字段',
-        type: 'error',
-        isVisible: true
-      });
-      return;
+        message: "请填写所有必填字段",
+        type: "error",
+        isVisible: true,
+      })
+      return
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
-      if (mode === 'create') {
-        const result = await createMenu(formData);
+      if (mode === "create") {
+        const result = await createMenu(formData)
         if (result.success) {
           setToast({
-            message: '菜单创建成功！',
-            type: 'success',
-            isVisible: true
-          });
-          onSuccess();
-          onClose();
+            message: "菜单创建成功！",
+            type: "success",
+            isVisible: true,
+          })
+          onSuccess()
+          onClose()
         } else {
           setToast({
-            message: result.error || '创建失败',
-            type: 'error',
-            isVisible: true
-          });
+            message: result.error || "创建失败",
+            type: "error",
+            isVisible: true,
+          })
         }
       } else {
         // Edit mode
-        if (!menu) return;
-        const updateData: UpdateMenuData = { ...formData };
-        const result = await updateMenu(menu.id, updateData);
+        if (!menu) return
+        const updateData: UpdateMenuData = { ...formData }
+        const result = await updateMenu(menu.id, updateData)
         if (result.success) {
           setToast({
-            message: '菜单更新成功！',
-            type: 'success',
-            isVisible: true
-          });
-          onSuccess();
-          onClose();
+            message: "菜单更新成功！",
+            type: "success",
+            isVisible: true,
+          })
+          onSuccess()
+          onClose()
         } else {
           setToast({
-            message: result.error || '更新失败',
-            type: 'error',
-            isVisible: true
-          });
+            message: result.error || "更新失败",
+            type: "error",
+            isVisible: true,
+          })
         }
       }
     } catch (error) {
-      console.error('Error submitting menu:', error);
+      console.error("Error submitting menu:", error)
       setToast({
-        message: '操作失败，请重试',
-        type: 'error',
-        isVisible: true
-      });
+        message: "操作失败，请重试",
+        type: "error",
+        isVisible: true,
+      })
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
-
+  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleInputChange = (field: keyof CreateMenuData, value: any) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
-    }));
-  };
+      [field]: value,
+    }))
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -142,7 +150,7 @@ export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold text-gray-900">
-            {mode === 'create' ? '创建菜单' : '编辑菜单'}
+            {mode === "create" ? "创建菜单" : "编辑菜单"}
           </h2>
           <button
             onClick={onClose}
@@ -163,7 +171,7 @@ export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess
               <input
                 type="text"
                 value={formData.name}
-                onChange={(e) => handleInputChange('name', e.target.value)}
+                onChange={(e) => handleInputChange("name", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="请输入菜单名称"
                 required
@@ -178,7 +186,7 @@ export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess
               <input
                 type="text"
                 value={formData.code}
-                onChange={(e) => handleInputChange('code', e.target.value)}
+                onChange={(e) => handleInputChange("code", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="view_dashboard"
                 required
@@ -193,7 +201,7 @@ export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess
               <input
                 type="text"
                 value={formData.route}
-                onChange={(e) => handleInputChange('route', e.target.value)}
+                onChange={(e) => handleInputChange("route", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="/dashboard"
                 required
@@ -207,7 +215,7 @@ export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess
               </label>
               <select
                 value={formData.type}
-                onChange={(e) => handleInputChange('type', e.target.value)}
+                onChange={(e) => handleInputChange("type", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 required
               >
@@ -225,7 +233,7 @@ export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess
               <input
                 type="text"
                 value={formData.icon}
-                onChange={(e) => handleInputChange('icon', e.target.value)}
+                onChange={(e) => handleInputChange("icon", e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="dashboard"
               />
@@ -239,7 +247,9 @@ export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess
               <input
                 type="number"
                 value={formData.sort}
-                onChange={(e) => handleInputChange('sort', parseInt(e.target.value) || 0)}
+                onChange={(e) =>
+                  handleInputChange("sort", parseInt(e.target.value) || 0)
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 min="0"
               />
@@ -252,7 +262,9 @@ export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess
               </label>
               <select
                 value={formData.status}
-                onChange={(e) => handleInputChange('status', parseInt(e.target.value))}
+                onChange={(e) =>
+                  handleInputChange("status", parseInt(e.target.value))
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
               >
                 <option value={1}>启用</option>
@@ -267,8 +279,13 @@ export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess
               </label>
               <input
                 type="number"
-                value={formData.parent_id || ''}
-                onChange={(e) => handleInputChange('parent_id', e.target.value ? parseInt(e.target.value) : undefined)}
+                value={formData.parent_id || ""}
+                onChange={(e) =>
+                  handleInputChange(
+                    "parent_id",
+                    e.target.value ? parseInt(e.target.value) : undefined
+                  )
+                }
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-purple-500"
                 placeholder="留空表示顶级菜单"
                 min="0"
@@ -282,10 +299,15 @@ export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess
               type="checkbox"
               id="is_top_level"
               checked={formData.is_top_level}
-              onChange={(e) => handleInputChange('is_top_level', e.target.checked)}
+              onChange={(e) =>
+                handleInputChange("is_top_level", e.target.checked)
+              }
               className="h-4 w-4 text-purple-600 focus:ring-purple-500 border-gray-300 rounded"
             />
-            <label htmlFor="is_top_level" className="ml-2 block text-sm text-gray-900">
+            <label
+              htmlFor="is_top_level"
+              className="ml-2 block text-sm text-gray-900"
+            >
               顶级菜单
             </label>
           </div>
@@ -312,7 +334,7 @@ export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess
               ) : (
                 <>
                   <FiSave className="w-4 h-4" />
-                  {mode === 'create' ? '创建' : '保存'}
+                  {mode === "create" ? "创建" : "保存"}
                 </>
               )}
             </button>
@@ -325,8 +347,8 @@ export default function CreateMenuModal({ isOpen, onClose, mode, menu, onSuccess
         message={toast.message}
         type={toast.type}
         isVisible={toast.isVisible}
-        onClose={() => setToast(prev => ({ ...prev, isVisible: false }))}
+        onClose={() => setToast((prev) => ({ ...prev, isVisible: false }))}
       />
     </div>
-  );
+  )
 }
